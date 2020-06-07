@@ -2,67 +2,66 @@
 #define V4L2CAPTURE_H
 
 #include <QString>
-//static void usage(FILE &fp, int argc, char **argv) {
-//    fprintf(fp,
-//            "Usage: %s [option]\n\n"
-//            "Version 0.1\n"
-//            "Option:\n"
-//            "-d | --device name"
-//            "-h | --help"
-//            "-m | --mmap"
-//            "-r | --read"
-//            "-u | --userp"
-//            "-o | --output"
-//            "-f | --format"
-//            "-c | --count"
-//            "",
-//            argv[0], dev_name, frame_count);
-//}
-
 
 class v4l2Capture
 {
 public:
     v4l2Capture();
 
-    bool init();
+    bool init(QString dev_name);
     void unInit();
 
     bool startCapture();
     void stopCapture();
 
+    class Callback {
+    public:
+        virtual void onFrameCapture(const char *data, int length, int index) = 0;
+    };
+
+    void setCallback(Callback *callback) {
+        m_callback = callback;
+    }
+
+
+    const char* getOneFrame();
     bool getFrame();
 
     QString enumDevices(const char *dev_name);
-
-//    void errno_exit(const char *s);
-//    int xioctl(int fh, int request, void *arg);
-//    void processImage(const void *p, int size);
-//    void storeImage(const char *buf_start, int size, int index);
-//    int readFrame(void);
-//    void mainloop(void);
-//    void stopCaptuing(void);
-//    void startCaptuing(void);
-//    void unInitDevice(void);
-//    void initRead(unsigned int buffer_size);
-//    void initMmap(void);
-//    void initUserp(unsigned int buffer_size);
-//    void initDevice(void);
-//    void closeDevice(void);
-//    void openDevice(void);
-
+    const char *captureVideoFrame();
 
 private:
-//    char            *dev_name;
-//    enum io_method   io = IO_METHOD_MMAP;
-//    int              fd = -1;
-//    buffer          *buffers;
-//    unsigned int     n_buffers;
-//    int              out_buf;
-//    int              force_format;
-//    int              frame_count = 4;
+    bool captureFrame();
 
+protected:
+    void errno_exit(const char *s);
+    int xioctl(int fh, int request, void *arg);
+    void processImage(const void *p, int size);
+    QString storeImage(const char *buf_start, int size, int index);
+    int readFrame(QString &path);
+    void mainloop(void);
+    void stopCaptuing(void);
+    void startCaptuing(void);
+    void unInitDevice(void);
+    void initRead(unsigned int buffer_size);
+    void initMmap(void);
+    void initUserp(unsigned int buffer_size);
+    void initDevice(void);
+    void closeDevice(void);
+    void openDevice(QString dev_name);
 
+private:
+
+    Callback *m_callback;
+
+};
+
+class HandleFrame : public v4l2Capture::Callback
+{
+public:
+    HandleFrame() {}
+
+    virtual void onFrameCapture(const char *data, int length, int index) override;
 };
 
 #endif // V4L2CAPTURE_H

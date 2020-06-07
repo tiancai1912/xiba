@@ -2,6 +2,7 @@
 #define MAINWINDOW_H
 
 #include <QMainWindow>
+#include "v4l2capture.h"
 
 namespace Ui {
 class MainWindow;
@@ -18,8 +19,16 @@ public:
 private slots:
     void on_pushButton_2_clicked();
 
+    void on_pushButton_clicked();
+
+    void on_pushButton_3_clicked();
+
 private:
     Ui::MainWindow *ui;
+
+    v4l2Capture m_cap;
+
+    HandleFrame m_handle;
 };
 
 #endif // MAINWINDOW_H
