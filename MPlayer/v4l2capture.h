@@ -2,8 +2,9 @@
 #define V4L2CAPTURE_H
 
 #include <QString>
+#include "threadutil.h"
 
-class v4l2Capture
+class v4l2Capture : public ThreadUtil::Callback
 {
 public:
     v4l2Capture();
@@ -29,6 +30,9 @@ public:
 
     QString enumDevices(const char *dev_name);
     const char *captureVideoFrame();
+
+protected:
+    void run() override;
 
 private:
     bool captureFrame();

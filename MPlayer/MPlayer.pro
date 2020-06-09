@@ -26,10 +26,15 @@ DEFINES += QT_DEPRECATED_WARNINGS
 SOURCES += \
         main.cpp \
         mainwindow.cpp \
+    threadutil.cpp \
+    utils.cpp \
     v4l2capture.cpp
 
 HEADERS += \
+    common.h \
         mainwindow.h \
+    threadutil.h \
+    utils.h \
     v4l2capture.h
 
 FORMS += \

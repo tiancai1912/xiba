@@ -113,8 +113,16 @@ bool v4l2Capture::startCapture()
 {
 //    startCaptuing();
 
-    captureFrame();
+//    captureFrame();
+    ThreadUtil thread(this);
+    thread.start();
+
     return true;
+}
+
+void v4l2Capture::run()
+{
+    captureFrame();
 }
 
 bool v4l2Capture::captureFrame()
