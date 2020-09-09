@@ -10,7 +10,19 @@ CONFIG -= app_bundle
 TEMPLATE = app
 
 SOURCES += main.cpp \
-    rtp.cpp
+    rtp.cpp \
+    aacsend.cpp \
+    socketconnection.cpp \
+    mp4file.cpp
 
 HEADERS += \
-    rtp.h
+    rtp.h \
+    aacsend.h \
+    socketconnection.h \
+    mp4file.h
+
+INCLUDEPATH += /usr/local/ffmpeg/include
+
+LIBS += /usr/local/ffmpeg/lib/libavformat.so \
+        /usr/local/ffmpeg/lib/libavcodec.so \
+        /usr/local/ffmpeg/lib/libavutil.so
