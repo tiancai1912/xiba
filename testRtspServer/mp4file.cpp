@@ -1,5 +1,6 @@
 #include "mp4file.h"
 
+#include "rtp.h"
 Mp4File::Mp4File()
 {
     m_fmt_ctx = NULL;
@@ -147,7 +148,7 @@ Mp4File::PacketItem * Mp4File::getOneFrame()
     /* read frames from the file */
     ret = av_read_frame(m_fmt_ctx, &pkt);
     if (ret >= 0) {
-        printf("av read frame success!\n");
+//        printf("av read frame success!\n");
         if (pkt.stream_index == m_video_stream_idx) {
 //            printf("av read video frame!\n");
             uint8_t *out_data = NULL;
@@ -176,18 +177,29 @@ Mp4File::PacketItem * Mp4File::getOneFrame()
             return item;
 
         } else if (pkt.stream_index == m_audio_stream_idx) {
-            aac_decode_extradata(&m_adts_ctx, m_fmt_ctx->streams[m_audio_stream_idx]->codec->extradata, m_fmt_ctx->streams[m_audio_stream_idx]->codec->extradata_size);
+//            aac_decode_extradata(&m_adts_ctx, m_fmt_ctx->streams[m_audio_stream_idx]->codec->extradata, m_fmt_ctx->streams[m_audio_stream_idx]->codec->extradata_size);
 
-            unsigned char adtsHdr[ADTS_HEADER_SIZE] = {0};
-            aac_set_adts_head(&m_adts_ctx, adtsHdr, pkt.size);
+//            printf("the extra data size: %d\n", m_fmt_ctx->streams[m_audio_stream_idx]->codec->extradata_size);
+
+//            unsigned char adtsHdr[ADTS_HEADER_SIZE] = {0};
+//            aac_set_adts_head(&m_adts_ctx, adtsHdr, pkt.size);
+
+//            rtp g_rtp;
+//            struct AdtsHeader adtsHeader;
+//            g_rtp.parseAdtsHeader(adtsHdr, &adtsHeader);
+
+//            printf("the pckt size: %d, the length: %d", pkt.size, adtsHeader.aacFrameLength - 7);
 
             PacketItem *item = new PacketItem();
+//            item->length =  adtsHeader.aacFrameLength - 7;
             item->length = pkt.size;
 //            item->length = pkt.size + 7;
             item->type = PacketType::PACKET_AUDIO;
 //            item->data = strncpy(item->data, (const char *)adtsHdr, 7);
 //            item->data = strncpy(item->data + 7, (const char *)(pkt.data), pkt.size);
-            item->data = strncpy(item->data, (const char *)(pkt.data), pkt.size);
+//            item->data = strncpy(item->data, (const char *)(pkt.data), pkt.size);
+//            item->data = strncpy(item->data, (const char *)(pkt.data), item->length);
+            memcpy(item->data, (const char *)(pkt.data), item->length);
             return item;
         }
 

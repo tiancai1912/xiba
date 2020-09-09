@@ -10,12 +10,14 @@ CONFIG -= app_bundle
 TEMPLATE = app
 
 SOURCES += main.cpp \
+    mytimer.cpp \
     rtp.cpp \
     aacsend.cpp \
     socketconnection.cpp \
     mp4file.cpp
 
 HEADERS += \
+    mytimer.h \
     rtp.h \
     aacsend.h \
     socketconnection.h \
