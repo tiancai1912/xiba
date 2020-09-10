@@ -14,14 +14,16 @@ SOURCES += main.cpp \
     rtp.cpp \
     aacsend.cpp \
     socketconnection.cpp \
-    mp4file.cpp
+    mp4file.cpp \
+    blockqueue.cpp
 
 HEADERS += \
     mytimer.h \
     rtp.h \
     aacsend.h \
     socketconnection.h \
-    mp4file.h
+    mp4file.h \
+    blockqueue.h
 
 INCLUDEPATH += /usr/local/ffmpeg/include
 

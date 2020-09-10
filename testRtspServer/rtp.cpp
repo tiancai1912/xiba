@@ -128,7 +128,7 @@ int rtp::rtpSendH264Frame(int socket, char* ip, int16_t port,
             return -1;
         }
 
-        printf("send rtp packet success\n");
+        printf("send video rtp packet success\n");
 
         rtpPacket->rtpHeader.seq++;
         sendBytes += ret;
@@ -201,6 +201,8 @@ int rtp::rtpSendH264Frame(int socket, char* ip, int16_t port,
             rtpPacket->rtpHeader.seq++;
             sendBytes += ret;
         }
+
+        printf("send video rtp packet success 11\n");
     }
 
 out:

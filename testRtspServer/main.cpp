@@ -30,6 +30,8 @@
 
 #include "mytimer.h"
 
+#include "blockqueue.h"
+
 #define H264_FILE_NAME  "test.h264"
 #define AAC_FILE_NAME "test.aac"
 
@@ -41,59 +43,6 @@
 rtp g_rtp;
 Mp4File g_file;
 
-int g_startCode;
-struct RtpPacket* g_videoRtpPacket = (struct RtpPacket*)malloc(500000);
-
-//            struct AdtsHeader adtsHeader;
-struct RtpPacket* g_audioRtpPacket = (struct RtpPacket *)malloc(5000);
-
-int g_serverSockfd;
-int g_serverRtpSockfd, g_serverRtcpSockfd;
-
-char g_clientIp[40];
-int g_clientPort;
-
-void TimerHandler_1()
-{
-    printf("TimerHandler_1\n");
-    Mp4File::PacketItem *item = g_file.getOneFrame();
-    if (item->type == Mp4File::PacketType::PACKET_VIDEO) {
-        if(!g_rtp.startCode3(item->data) && !g_rtp.startCode4(item->data))
-            return;
-
-        if(g_rtp.startCode3(item->data))
-            g_startCode = 3;
-        else
-            g_startCode = 4;
-
-        item->length -= g_startCode;
-        g_rtp.rtpSendH264Frame(g_serverRtpSockfd, (char *)g_clientIp, g_clientPort,
-                         g_videoRtpPacket, (unsigned char *)(item->data + g_startCode), item->length);
-//                    g_rtp.rtpSendH264Frame(serverRtpSockfd, (char *)clientIP, clientRtpPort,
-//                                     videoRtpPacket, (unsigned char *)(item->data), item->length);
-        g_videoRtpPacket->rtpHeader.timestamp += 90000/25;
-
-        printf("send video frame\n");
-    }
-    free(item);
-    item = NULL;
-}
-
-void TimerHandler_2()
-{
-    printf("TimerHandler_2\n");
-    printf("get one audio frame\n");
-    Mp4File::PacketItem *item = g_file.getOneFrame();
-    if (item->type == Mp4File::PacketType::PACKET_VIDEO) {
-        g_rtp.rtpSendAACFrame(g_serverRtpSockfd, g_clientIp, g_clientPort,
-                        g_audioRtpPacket, (unsigned char *)(item->data), item->length);
-        printf("send audio frame\n");
-    }
-
-    free(item);
-    item = NULL;
-}
-
 static int handleCmd_OPTIONS(char* result, int cseq)
 {
     sprintf(result, "RTSP/1.0 200 OK\r\n"
@@ -103,6 +52,111 @@ static int handleCmd_OPTIONS(char* result, int cseq)
                     cseq);
 
     return 0;
+}
+
+BlockQueue g_block_queue;
+
+int g_serverRtpSockfd = -1;
+char g_clientIp[40] = {0};
+int g_clientPort = -1;
+int g_audio_clientPort = -1;
+
+static void decodeFrame()
+{
+    printf("start decode frame\n");
+    while(1) {
+        Mp4File::PacketItem *item = g_file.getOneFrame();
+        if (item == NULL) {
+            printf("chuqu l \n");
+            break;
+        }
+
+//        printf("get one ffmpeg frame\n");
+
+        if (item->type == Mp4File::PacketType::PACKET_VIDEO) {
+            g_block_queue.pushVideoFrame(item);
+//            printf("push one video frame\n");
+        } else if (item->type == Mp4File::PacketType::PACKET_AUDIO) {
+//            printf("push one audio frame\n");
+            g_block_queue.pushAudioFrame(item);
+        }
+    }
+
+    printf("stop decode frame\n");
+
+//    free(item);
+//    item = NULL;
+
+}
+
+static void handleVideoFrame()
+{
+    int startCode;
+    struct RtpPacket* videoRtpPacket = (struct RtpPacket*)malloc(500000);
+    g_rtp.rtpHeaderInit(videoRtpPacket, 0, 0, 0, RTP_VESION, RTP_PAYLOAD_TYPE_H264, 0,
+                        0, 0, 0x88923423);
+
+    printf("start play\n");
+    printf("client ip:%s\n", g_clientIp);
+    printf("client port:%d\n", g_clientPort);
+    printf("audio client port:%d\n", g_audio_clientPort);
+
+    while (1)
+    {
+        Mp4File::PacketItem *item = g_block_queue.popVideoFrame();
+//        printf("get one video frame\n");
+
+        if (item == NULL) {
+            printf("pop null data\n");
+        }
+
+        if(!g_rtp.startCode3(item->data) && !g_rtp.startCode4(item->data))
+            continue;
+
+        if(g_rtp.startCode3(item->data))
+            startCode = 3;
+        else
+            startCode = 4;
+
+        item->length -= startCode;
+        g_rtp.rtpSendH264Frame(g_serverRtpSockfd, (char *)g_clientIp, g_clientPort,
+                               videoRtpPacket, (unsigned char *)(item->data + startCode), item->length);
+
+        videoRtpPacket->rtpHeader.timestamp += 90000/25;
+        printf("send video frame\n");
+
+        free(item);
+        item = NULL;
+
+        usleep(1000*1000/25);
+    }
+
+    free(videoRtpPacket);
+}
+
+static void handleAudioFrame()
+{
+    struct RtpPacket* audioRtpPacket = (struct RtpPacket *)malloc(5000);
+    g_rtp.rtpHeaderInit(audioRtpPacket, 0, 0, 0, RTP_VESION, RTP_PAYLOAD_TYPE_AAC, 1, 0, 0, 0x32411);
+
+
+    printf("start play\n");
+    printf("client ip:%s\n", g_clientIp);
+    printf("client port:%d\n", g_clientPort);
+    printf("audio client port:%d\n", g_audio_clientPort);
+
+    while (1)
+    {
+        Mp4File::PacketItem *item = g_block_queue.popAudioFrame();
+
+//        printf("get one audio frame\n");
+        g_rtp.rtpSendAACFrame(g_serverRtpSockfd, g_clientIp, g_audio_clientPort,
+                              audioRtpPacket, (unsigned char *)(item->data), item->length);
+
+        usleep(23000);
+    }
+
+    free(audioRtpPacket);
 }
 
 //static int handleCmd_DESCRIBE(char* result, int cseq, char* url)
@@ -151,18 +205,38 @@ static int handleCmd_DESCRIBE(char* result, int cseq, char* url)
                  "t=0 0\r\n"
                  "a=control:*\r\n"
                  "a=type:broadcast\r\n"
-                       "m=audio 0 RTP/AVP 97\r\n"
-                       "c=IN IP4 127.0.0.1\r\n"
-                      "a=rtpmap:97 mpeg4-generic/44100/2\r\n"
-                      "a=fmtp:97 SizeLength=13;\r\n"
-                      "a=control:track1\r\n"
                  "m=video 0 RTP/AVP 96\r\n"
                  "c=IN IP4 127.0.0.1\r\n"
                  "a=rtpmap:96 H264/90000\r\n"
                  "a=framerate:25"
-                 "a=control:track0\r\n",
+                 "a=control:track0\r\n"
+                       "m=audio 0 RTP/AVP 97\r\n"
+                       "c=IN IP4 127.0.0.1\r\n"
+                       "a=rtpmap:97 mpeg4-generic/44100/2\r\n"
+                       "a=fmtp:97 SizeLength=13;\r\n"
+                       "a=control:track1\r\n",
                  time(NULL), localIp);
 
+
+//    v=0
+//    o=- 303660287 303660287 IN IP4 184.72.239.149
+//    s=BigBuckBunny_175k.mov
+//    c=IN IP4 184.72.239.149
+//    t=0 0
+//    a=sdplang:en
+//    a=range:npt=0- 596.458
+//    a=control:*
+//    m=audio 0 RTP/AVP 96
+//    a=rtpmap:96 mpeg4-generic/48000/2
+//    a=fmtp:96 profile-level-id=1;mode=AAC-hbr;sizelength=13;indexlength=3;indexdeltalength=3;config=1190
+//    a=control:trackID=1
+//    m=video 0 RTP/AVP 97
+//    a=rtpmap:97 H264/90000
+//    a=fmtp:97 packetization-mode=1;profile-level-id=42C01E;sprop-parameter-sets=Z0LAHtkDxWhAAAADAEAAAAwDxYuS,aMuMsg==
+//    a=cliprect:0,0,160,240
+//    a=framesize:97 240-160
+//    a=framerate:24.0
+//    a=control:trackID=2
 
 
     sprintf(result, "RTSP/1.0 200 OK\r\nCSeq: %d\r\n"
@@ -213,6 +287,7 @@ static void doClient(int clientSockfd, const char* clientIP, int clientPort,
     char version[40];
     int cseq;
     int clientRtpPort, clientRtcpPort;
+    int audio_clientRtpPort, audio_clientRtcpPort;
     char *bufPtr;
     char* rBuf = (char *)malloc(BUF_MAX_SIZE);
     char* sBuf = (char *)malloc(BUF_MAX_SIZE);
@@ -279,6 +354,15 @@ static void doClient(int clientSockfd, const char* clientIP, int clientPort,
         }
         else if(!strcmp(method, "SETUP"))
         {
+            if (strstr(url, "track1")) {
+                printf("the track: %s", url);
+                audio_clientRtpPort = clientRtpPort;
+                audio_clientRtcpPort = clientRtcpPort;
+                g_audio_clientPort = audio_clientRtpPort;
+            } else {
+                g_clientPort = clientRtpPort;
+            }
+
             if(handleCmd_SETUP(sBuf, cseq, clientRtpPort))
             {
                 printf("failed to handle setup\n");
@@ -302,35 +386,68 @@ static void doClient(int clientSockfd, const char* clientIP, int clientPort,
         printf("%s", sBuf);
         send(clientSockfd, sBuf, strlen(sBuf), 0);
 
-        /* 开始播放，发送RTP包 */
-        if(!strcmp(method, "PLAY"))
-        {
-            g_rtp.rtpHeaderInit(g_videoRtpPacket, 0, 0, 0, RTP_VESION, RTP_PAYLOAD_TYPE_H264, 0,
-                          0, 0, 0x88923423);
-            g_rtp.rtpHeaderInit(g_audioRtpPacket, 0, 0, 0, RTP_VESION, RTP_PAYLOAD_TYPE_AAC, 1, 0, 0, 0x32411);
+        if (!strcmp(method, "PLAY")) {
 
-            printf("start play\n");
-            printf("client ip:%s\n", clientIP);
-            printf("client port:%d\n", clientRtpPort);
+            std::thread createFrame(&decodeFrame);
+            std::thread videoFrameHandle(&handleVideoFrame);
+            std::thread audioFrameHandle(&handleAudioFrame);
 
-            TimerManager tm;
+            //
 
-            Timer t1(tm);
-            t1.Start(&TimerHandler_1, 40);
+//            int startCode;
+//            struct RtpPacket* videoRtpPacket = (struct RtpPacket*)malloc(500000);
+//            g_rtp.rtpHeaderInit(videoRtpPacket, 0, 0, 0, RTP_VESION, RTP_PAYLOAD_TYPE_H264, 0,
+//                                0, 0, 0x88923423);
 
-//            Timer t2(tm);
-//            t2.Start(&TimerHandler_2, 23);
+//            printf("start play\n");
+//            printf("client ip:%s\n", g_clientIp);
+//            printf("client port:%d\n", g_clientPort);
 
-            while (true)
-            {
-                tm.DetectTimers();
-                std::this_thread::sleep_for(std::chrono::milliseconds(100));
-                printf("jieshu l \n");
-            }
-printf("jieshu\n");
-            free(g_videoRtpPacket);
-            free(g_audioRtpPacket);
-            goto out;
+//            while (1)
+//            {
+//                Mp4File::PacketItem *item = g_block_queue.popVideoFrame();
+////                Mp4File::PacketItem *item = g_file.getOneFrame();
+
+
+
+//                if (item == NULL) {
+//                    printf("pop null data\n");
+//                }
+
+//                if(!g_rtp.startCode3(item->data) && !g_rtp.startCode4(item->data))
+//                    continue;
+
+//                if(g_rtp.startCode3(item->data))
+//                    startCode = 3;
+//                else
+//                    startCode = 4;
+
+//                item->length -= startCode;
+//                g_rtp.rtpSendH264Frame(serverRtpSockfd, (char *)clientIP, clientRtpPort,
+//                                       videoRtpPacket, (unsigned char *)(item->data + startCode), item->length);
+
+//                videoRtpPacket->rtpHeader.timestamp += 90000/25;
+//                printf("send video frame\n");
+
+//                free(item);
+//                item = NULL;
+
+//                usleep(1000*1000/25);
+//            }
+
+//            free(videoRtpPacket);
+
+            //
+
+//            std::thread videoFrameHandle(&handleVideoFrame);
+//            std::thread audioFrameHandle(&handleAudioFrame);
+
+//            videoFrameHandle.join();
+            createFrame.join();
+            videoFrameHandle.join();
+            audioFrameHandle.join();
+//            audioFrameHandle.join();
+        }
 
 //        /* 开始播放，发送RTP包 */
 //        if(!strcmp(method, "PLAY"))
@@ -445,7 +562,7 @@ printf("jieshu\n");
 //            free(frame);
 //            free(rtpPacket);
 //            goto out;
-        }
+//    }
 
 
 
@@ -494,9 +611,7 @@ int main(int argc, char *argv[])
         return -1;
     }
 
-    g_serverSockfd  = serverSockfd;
     g_serverRtpSockfd = serverRtpSockfd;
-    g_serverRtcpSockfd = serverRtcpSockfd;
 
     if(conn.bindSocketAddr(serverRtpSockfd, "0.0.0.0", SERVER_RTP_PORT) < 0 ||
         conn.bindSocketAddr(serverRtcpSockfd, "0.0.0.0", SERVER_RTCP_PORT) < 0)
@@ -521,7 +636,7 @@ int main(int argc, char *argv[])
         }
 
         strcpy(g_clientIp, clientIp);
-        g_clientPort = clientPort;
+//        g_clientPort = clientPort;
 
         printf("accept client;client ip:%s,client port:%d\n", clientIp, clientPort);
 
@@ -529,7 +644,7 @@ int main(int argc, char *argv[])
     }
 
     qDebug() << "hellp rtsp\n";
-//    g_file.closeFile();
+    g_file.closeFile();
     getchar();
     return 0;
 }

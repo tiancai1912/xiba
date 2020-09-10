@@ -163,6 +163,8 @@ Mp4File::PacketItem * Mp4File::getOneFrame()
 //            printf("out data: %02x %02x %02x %02x\n", out_data[0], out_data[1], out_data[2], out_data[3]);
 //            printf("pkt data: %02x %02x %02x %02x\n", pkt.data[0], pkt.data[1], pkt.data[2], pkt.data[3]);
 
+            printf("get video frame pts: %ld, dts: %ld\n", pkt.pts, pkt.dts);
+
             PacketItem *item = new PacketItem();
             item->type = PacketType::PACKET_VIDEO;
 //            item->length = pkt.size;
@@ -190,6 +192,8 @@ Mp4File::PacketItem * Mp4File::getOneFrame()
 
 //            printf("the pckt size: %d, the length: %d", pkt.size, adtsHeader.aacFrameLength - 7);
 
+            printf("get audio frame pts: %ld, dts: %ld\n", pkt.pts, pkt.dts);
+
             PacketItem *item = new PacketItem();
 //            item->length =  adtsHeader.aacFrameLength - 7;
             item->length = pkt.size;
@@ -204,10 +208,11 @@ Mp4File::PacketItem * Mp4File::getOneFrame()
         }
 
         av_packet_unref(&pkt);
-        if (ret < 0)
-            return NULL;
+//        if (ret < 0)
+//            return NULL;
     } else {
         printf("av read frame failed!\n");
+        return NULL;
     }
 
     return NULL;
