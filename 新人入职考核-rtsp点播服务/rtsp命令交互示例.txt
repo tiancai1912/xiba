@@ -1,0 +1,78 @@
+OPTIONS
+c -> s
+OPTIONS rtsp://192.168.31.115:8554/live RTSP/1.0\r\n
+CSeq: 2\r\n
+\r\n
+
+s -> c
+RTSP/1.0 200 OK\r\n
+CSeq: 2\r\n
+Public: OPTIONS, DESCRIBE, SETUP, TEARDOWN, PLAY\r\n
+\r\n
+
+DESCRIBE
+c -> s
+DESCRIBE rtsp://192.168.31.115:8554/live RTSP/1.0\r\n
+CSeq: 3\r\n
+Accept: application/sdp\r\n
+\r\n
+
+s -> c
+RTSP/1.0 200 OK\r\n
+CSeq: 3\r\n
+Content-length: 146\r\n
+Content-type: application/sdp\r\n
+\r\n
+
+v=0\r\n
+o=- 91565340853 1 in IP4 192.168.31.115\r\n
+t=0 0\r\n
+a=contol:*\r\n
+m=video 0 RTP/AVP 96\r\n
+a=rtpmap:96 H264/90000\r\n
+a=framerate:25\r\n
+a=control:track0\r\n
+
+SETUP
+c -> s
+SETUP rtsp://192.168.31.115:8554/live/track0 RTSP/1.0\r\n
+CSeq: 4\r\n
+Transport: RTP/AVP;unicast;client_port=54492-54493\r\n
+\r\n
+
+s -> c
+RTSP/1.0 200 OK\r\n
+CSeq: 4\r\n
+Transport: RTP/AVP;unicast;client_port=54492-54493;server_port=56400-56401\r\n
+Session: 66334873\r\n
+\r\n
+
+PLAY
+c -> s
+PLAY rtsp://192.168.31.115:8554/live RTSP/1.0\r\n
+CSeq: 5\r\n
+Session: 66334873\r\n
+Range: npt=0.000-\r\n
+\r\n
+
+s -> c
+RTSP/1.0 200 OK\r\n
+CSeq: 5\r\n
+Range: npt=0.000-\r\n
+Session: 66334873; timeout=60\r\n
+\r\n
+
+TEARDOWN
+c -> s
+TEARDOWN rtsp://192.168.31.115:8554/live RTSP/1.0\r\n
+CSeq: 6\r\n
+Session: 66334873\r\n
+\r\n
+
+s -> c
+RTSP/1.0 200 OK\r\n
+CSeq: 6\r\n
+\r\n
+
+
+
