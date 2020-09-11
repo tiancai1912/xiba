@@ -25,6 +25,7 @@
 #include <condition_variable>
 #include <linux/videodev2.h>
 
+#include "testq1andq2.h"
 
 struct Item {
     bool bUse;
@@ -221,6 +222,9 @@ static void handleData2() {
 
 int main(int argc, char *argv[])
 {
+    /**
+     * write queue first
+     *
     initQueue();
 
     g_thread1 = std::thread(publishData);
@@ -230,6 +234,20 @@ int main(int argc, char *argv[])
     g_thread1.join();
     g_thread2.join();
 //    g_thread3.join();
+
+     */
+
+    /**
+     * wrirte queue version 2.0 (include raw queue and handle queue)
+     */
+    testQ1AndQ2 testQueue;
+    testQueue.startRawThread();
+    testQueue.startHandleThread();
+
+    testQueue.stopRawThread();
+    testQueue.stopHandleThread();
+
+
 
     getchar();
     return 0;
