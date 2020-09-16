@@ -1,6 +1,6 @@
 #include "mp4file.h"
 
-#include "rtp.h"
+#include "net/rtp.h"
 Mp4File::Mp4File()
 {
     m_fmt_ctx = NULL;
@@ -54,7 +54,7 @@ int Mp4File::aac_decode_extradata(ADTSContext *adts, unsigned char *pbuf, int bu
 int Mp4File::aac_set_adts_head(ADTSContext *acfg, unsigned char *buf, int size) {
       unsigned char byte;
       if (size < ADTS_HEADER_SIZE) {
-          printf("%s, run aac_set_adts_head failed, input size < ADTS_HEADER_SIZE\n", TAG);
+          printf("%s, run aac_set_adts_head failed, input size %d < ADTS_HEADER_SIZE\n", TAG, size);
           return -1;
       }
 
@@ -184,7 +184,7 @@ Mp4File::PacketItem * Mp4File::getOneFrame()
 //            printf("the extra data size: %d\n", m_fmt_ctx->streams[m_audio_stream_idx]->codec->extradata_size);
 
 //            unsigned char adtsHdr[ADTS_HEADER_SIZE] = {0};
-//            aac_set_adts_head(&m_adts_ctx, adtsHdr, pkt.size);
+//            aac_set_adts_head(&m_adts_ctx, adtsHdr, pkt.size + 7);
 
 //            rtp g_rtp;
 //            struct AdtsHeader adtsHeader;
