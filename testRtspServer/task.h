@@ -6,7 +6,10 @@
 #include "base/mytimer.h"
 #include <thread>
 #include <unistd.h>
+#include <sys/time.h>
 #include "net/rtp.h"
+#include "base/condition.h"
+#include "base/mutex.h"
 
 #define RTP_VESION              2
 
@@ -30,6 +33,25 @@ protected:
     void handleH264Data();
     void handleAACData();
 
+    void handleVideoTimer();
+    void handleAudioTimer();
+
+    void checkFpsTimer();
+
+    ino64_t getTime();
+
+private:
+    void setVideoEvent();
+    void setAudioEvent();
+    bool waitVideoEvent();
+    bool waitAudioEvent();
+    void createVideoTimer(int timeout);
+    void createAudioTimer(int timeout);
+    void createCheckFpsTimer(int timeout);
+    void cancelVideoTimer();
+    void cancelAudioTimer();
+    void cancelCheckFpsTimer();
+
 private:
     Mp4File *mFile;
     std::thread *mGetRawData;
@@ -45,6 +67,26 @@ private:
     rtp mRtp;
     struct RtpPacket* mVideoRtpPacket;
     struct RtpPacket* mAudioRtpPacket;
+
+    int64_t m_diff_time;
+
+
+    ino64_t mFirstTime;
+    ino64_t mCurTime;
+    int64_t mFrames;
+
+    int mFps;
+
+    MyTimer *mCheckFps;
+
+    bool mQuit;
+    Mutex *mVideoMutex;
+    Mutex *mAudioMutex;
+    Condition *mCanSendVideo;
+    Condition *mCanSendAudio;
+
+    std::thread *mHandleVideoData;
+    std::thread *mHandleAudioData;
 };
 
 #endif // TASK_H

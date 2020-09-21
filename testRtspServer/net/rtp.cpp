@@ -128,7 +128,7 @@ int rtp::rtpSendH264Frame(int socket, char* ip, int16_t port,
             return -1;
         }
 
-        printf("send video rtp packet success\n");
+//        printf("send video rtp packet success\n");
 
         rtpPacket->rtpHeader.seq++;
         sendBytes += ret;
@@ -364,6 +364,15 @@ int rtp::rtpSendAACFrame(int socket, const char* ip, int16_t port,
      * 时间增量就是 44100 / 43 = 1025
      * 一帧的时间为 1 / 43 = 23ms
      */
-    rtpPacket->rtpHeader.timestamp += 1025;
+
+    /*
+     * 如果采样频率是44100
+     * 一般AAC每个2048个采样为一帧
+     * 所以一秒就有 44100 / 2048 = 21帧
+     * 时间增量就是 44100 / 21 = 2048
+     * 一帧的时间为 1 / 21 = 46ms
+     */
+    rtpPacket->rtpHeader.timestamp += 1024;
+//    rtpPacket->rtpHeader.timestamp += 2048;
     return 0;
 }

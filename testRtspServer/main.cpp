@@ -28,6 +28,11 @@
 #include "base/blockqueue.h"
 #include "task.h"
 
+#include <thread>
+#include <unistd.h>
+
+#include "base/threadpool.h"
+
 #define SERVER_PORT     8554
 #define SERVER_RTP_PORT  55532
 #define SERVER_RTCP_PORT 55533
@@ -72,7 +77,7 @@ static int handleCmd_DESCRIBE(char* result, int cseq, char* url)
                  "m=video 0 RTP/AVP 96\r\n"
                  "c=IN IP4 127.0.0.1\r\n"
                  "a=rtpmap:96 H264/90000\r\n"
-                 "a=framerate:25"
+//                 "a=framerate:25"
                  "a=control:track0\r\n"
                  "m=audio 0 RTP/AVP 97\r\n"
                  "c=IN IP4 127.0.0.1\r\n"
@@ -241,6 +246,23 @@ out:
     free(sBuf);
 }
 
+struct TaskParams
+{
+  int   clientSockfd;
+  char *clientIp;
+  int clientPor;
+  int serverRtpSockfd;
+  int serverRtcpSockfd;
+  Task *task;
+};
+
+void handleTaskCallback(void *arg)
+{
+    TaskParams *params = (TaskParams *)arg;
+    doClient(params->clientSockfd, params->clientIp, params->clientPor, params->serverRtpSockfd, params->serverRtpSockfd, params->task);
+
+}
+
 int main(int argc, char *argv[])
 {
     int serverSockfd;
@@ -289,6 +311,8 @@ int main(int argc, char *argv[])
 
     printf("rtsp://127.0.0.1:%d\n", SERVER_PORT);
 
+    ThreadPool pool(3);
+
     while(1)
     {
         int clientSockfd;
@@ -304,7 +328,14 @@ int main(int argc, char *argv[])
 
         printf("accept client;client ip:%s,client port:%d\n", clientIp, clientPort);
 
-        doClient(clientSockfd, clientIp, clientPort, serverRtpSockfd, serverRtcpSockfd, g_task[0]);
+//        std::thread *tt = new std::thread(doClient, clientSockfd, clientIp, clientPort, serverRtpSockfd, serverRtcpSockfd, g_task[0]);
+//        tt->join();
+
+        TaskParams *taskParams = new TaskParams{clientSockfd, clientIp, clientPort, serverRtpSockfd, serverRtcpSockfd, g_task[0]};
+        ThreadPool::Task task1;
+        task1.setTaskCallback(handleTaskCallback, (void *)taskParams);
+        pool.addTask(task1);
+//        doClient(clientSockfd, clientIp, clientPort, serverRtpSockfd, serverRtcpSockfd, g_task[0]);
     }
 
     getchar();
