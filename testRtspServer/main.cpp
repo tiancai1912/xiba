@@ -33,6 +33,10 @@
 
 #include "base/threadpool.h"
 
+#include "getopt.h"
+#include <regex>
+#include <string>
+
 #define SERVER_PORT     8554
 #define SERVER_RTP_PORT  55532
 #define SERVER_RTCP_PORT 55533
@@ -42,6 +46,16 @@ rtp g_rtp;
 Mp4File g_file;
 
 Task *g_task[16];
+
+static struct option long_options[] = {
+    {"directory", 1, 0, 'd'},
+    {"listen", 2, 0, 'l'},
+    {"port", 2, 0, 'p'},
+    {"help", 0, 0, 'h'},
+};
+
+static char optstring[] = "d:l::p::h";
+
 
 static int handleCmd_OPTIONS(char* result, int cseq)
 {
@@ -260,11 +274,85 @@ void handleTaskCallback(void *arg)
 {
     TaskParams *params = (TaskParams *)arg;
     doClient(params->clientSockfd, params->clientIp, params->clientPor, params->serverRtpSockfd, params->serverRtpSockfd, params->task);
+}
 
+static bool checkRtspUrl(char *str)
+{
+    std::string pattern = "rtsp:\/\/\\d{1,3}.\\d{1,3}.\\d{1,3}.\\d{1,3}";
+    std::regex express(pattern);
+
+    bool ret = std::regex_match(str, express);
+    return ret;
+}
+
+static int getPort(char *str)
+{
+    int port = std::stoi(str);
+    return port;
+}
+
+static const char *getFileName(char *dir)
+{
+    std::string path(dir);
+    int pos = path.find_last_of('/');
+
+    std::string fileName = path.substr(pos + 1);
+    return fileName.c_str();
+}
+
+struct OptResult
+{
+    int port;
+    char ip[128];
+    char fileName[128];
+
+    OptResult() {
+        port = -1;
+        memset(ip, 0, 128);
+        memset(fileName, 0, 128);
+    }
+};
+
+static OptResult * parseOptions(int argc, char **argv)
+{
+    char *str;
+    int long_index;
+    int c;
+
+    struct OptResult *result = new OptResult();
+
+    while((c = getopt_long(argc, argv, optstring, long_options, &long_index)) != EOF) {
+        switch (c) {
+        case 'd':
+            str = optarg;
+            strcpy(result->fileName, getFileName(str));
+            break;
+        case 'l':
+            str = optarg;
+            if (checkRtspUrl(str) == true) {
+                strcpy(result->ip, str);
+            }
+            break;
+        case 'p':
+            str = optarg;
+            result->port = getPort(str);
+            break;
+        case 'h':
+            printf("the help: %s\n", str);
+            break;
+        }
+    }
+
+    return result;
 }
 
 int main(int argc, char *argv[])
 {
+    struct OptResult *result = parseOptions(argc, argv);
+    printf("the directory : %s\n", result->fileName);
+    printf("matche result: %s\n", result->ip);
+    printf("the port : %d\n", result->port);
+
     int serverSockfd;
     int serverRtpSockfd, serverRtcpSockfd;
     int ret;
