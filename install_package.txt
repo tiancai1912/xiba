@@ -1,0 +1,29 @@
+ffmpeg安装
+1. github下载release版本库
+2. ./configure --enable-shared --prefix=/usr/local/ffmpeg --disable-yasm
+3. 必要时候可以 apt-get 安装yasm
+4. make / sudo make install  -> make clean
+5. 进入/etc/ld.so.conf.d
+6. vim ffmpeg.conf（创建文件）
+7. 添加/usr/local/ffmpeg/lib
+8. sudo ldconfig 生效ffmpeg lib 路径
+9. 进入 /usr/local/ffmpeg/bin
+10. 运行ldd ffmpeg 查看依赖的库是否都ok了
+11. ./ffmpeg -v 查看版本，查看是否都安装成功了
+
+注意：
+1. 如果需要安装ffplay，需要先安装libsdl2相关的四个dev包，然后按照如上所示重新编译ffmpeg，bin目录下就有ffplay了
+
+
+
+boost安装
+1. 下载boot包  https://dl.bintray.com/boostorg/release
+2. 解压包
+3. cd 进入包文件夹
+4. ./bootstrap.sh
+5. ./b2
+6. sudo ./b2 install --prefix=/usr/local
+6 ./b2 clean
+7. 安装成功的头文件及库路径
+/usr/local/include/boost
+/usr/local/lib
