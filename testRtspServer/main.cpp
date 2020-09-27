@@ -59,7 +59,7 @@ static char optstring[] = "d:l::p::h";
 
 static int handleCmd_OPTIONS(char* result, int cseq)
 {
-    sprintf(result, "RTSP/1.0 200 OK\r\n"
+    sprintf(result, "RTSP/1.0 200 ok\r\n"
                     "CSeq: %d\r\n"
                     "Public: OPTIONS, DESCRIBE, SETUP, PLAY\r\n"
                     "\r\n",
@@ -67,6 +67,17 @@ static int handleCmd_OPTIONS(char* result, int cseq)
 
     return 0;
 }
+
+//static int handleCmd_OPTIONS(char* result, int cseq)
+//{
+//    sprintf(result, "RTSP/1.0 400 Bad Request\r\n"
+//                    "CSeq: %d\r\n"
+//                    "\r\n",
+//                    cseq);
+
+//    return 0;
+//}
+
 
 BlockQueue g_block_queue;
 
@@ -270,6 +281,18 @@ struct TaskParams
   Task *task;
 };
 
+struct CmdParams {
+    char fileName[256];
+    char ip[256];
+    int port;
+
+    CmdParams() {
+        memset(fileName, 0, sizeof(char) * 256);
+        memset(ip, 0, sizeof(char) * 256);
+        port = -1;
+    }
+};
+
 void handleTaskCallback(void *arg)
 {
     TaskParams *params = (TaskParams *)arg;
@@ -313,29 +336,29 @@ struct OptResult
     }
 };
 
-static OptResult * parseOptions(int argc, char **argv)
+static CmdParams parseOptions(int argc, char **argv)
 {
     char *str;
     int long_index;
     int c;
 
-    struct OptResult *result = new OptResult();
+    struct CmdParams params;
 
     while((c = getopt_long(argc, argv, optstring, long_options, &long_index)) != EOF) {
         switch (c) {
         case 'd':
             str = optarg;
-            strcpy(result->fileName, getFileName(str));
+            strcpy(params.fileName, getFileName(str));
             break;
         case 'l':
             str = optarg;
             if (checkRtspUrl(str) == true) {
-                strcpy(result->ip, str);
+                strcpy(params.ip, str);
             }
             break;
         case 'p':
             str = optarg;
-            result->port = getPort(str);
+            params.port = getPort(str);
             break;
         case 'h':
             printf("the help: %s\n", str);
@@ -343,45 +366,185 @@ static OptResult * parseOptions(int argc, char **argv)
         }
     }
 
-    return result;
+    return params;
 }
+
+class TcpClient
+{
+public:
+    TcpClient(char *ip, int port);
+    ~TcpClient();
+
+    int connect();
+private:
+    void bind();
+};
+
+class TcpServer
+{
+public:
+    TcpServer(const char *ip, int port);
+    ~TcpServer();
+
+    int accept(char *ip, int *port);
+private:
+    int create();
+    bool bind();
+    void listen();
+
+public:
+    SocketConnection conn;
+    int mFd;
+    char *mIp;
+    int mPort;
+};
+
+TcpServer::TcpServer(const char *ip, int port)
+{
+    mIp = (char *)malloc(256);
+    memset(mIp, 0, sizeof(char) * 256);
+    strcpy(mIp, ip);
+
+    mPort = port;
+    mFd = create();
+
+    bind();
+    listen();
+}
+
+int TcpServer::create()
+{
+    int sockfd;
+    int on = 1;
+
+    sockfd = socket(AF_INET, SOCK_STREAM, 0);
+    if(sockfd < 0)
+        return -1;
+
+    setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, (const char*)&on, sizeof(on));
+
+    return sockfd;
+}
+
+TcpServer::~TcpServer()
+{
+}
+
+int TcpServer::accept(char *ip, int *port)
+{
+    int clientfd;
+    socklen_t len = 0;
+    struct sockaddr_in addr;
+
+    memset(&addr, 0, sizeof(addr));
+    len = sizeof(addr);
+
+    clientfd = ::accept(mFd, (struct sockaddr *)&addr, &len);
+    if(clientfd < 0)
+        return -1;
+
+    strcpy(ip, inet_ntoa(addr.sin_addr));
+    *port = ntohs(addr.sin_port);
+
+    return clientfd;
+}
+
+bool TcpServer::bind()
+{
+    struct sockaddr_in addr;
+
+    addr.sin_family = AF_INET;
+    addr.sin_port = htons(mPort);
+    addr.sin_addr.s_addr = inet_addr(mIp);
+
+    if(::bind(mFd, (struct sockaddr *)&addr, sizeof(struct sockaddr)) < 0)
+        return false;
+
+    return true;
+}
+
+void TcpServer::listen()
+{
+    ::listen(mFd, 10);
+}
+
+class UdpSocket
+{
+public:
+  UdpSocket();
+  ~UdpSocket();
+
+  int fd();
+  int bind(char *ip, int port);
+
+private:
+  int create();
+
+private:
+  int mFd;
+  char *mIp;
+  int mPort;
+};
+
+UdpSocket::UdpSocket()
+{
+    mFd = create();
+}
+
+UdpSocket::~UdpSocket()
+{
+
+}
+
+int UdpSocket::fd()
+{
+    return mFd;
+}
+
+int UdpSocket::bind(char *ip, int port)
+{
+    struct sockaddr_in addr;
+
+    addr.sin_family = AF_INET;
+    addr.sin_port = htons(port);
+    addr.sin_addr.s_addr = inet_addr(ip);
+
+    if(::bind(mFd, (struct sockaddr *)&addr, sizeof(struct sockaddr)) < 0)
+        return -1;
+
+    return 0;
+}
+
+int UdpSocket::create()
+{
+    int sockfd;
+    int on = 1;
+
+    sockfd = socket(AF_INET, SOCK_DGRAM, 0);
+    if(sockfd < 0)
+        return -1;
+
+    setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, (const char*)&on, sizeof(on));
+    return sockfd;
+}
+
 
 int main(int argc, char *argv[])
 {
-    struct OptResult *result = parseOptions(argc, argv);
-    printf("the directory : %s\n", result->fileName);
-    printf("matche result: %s\n", result->ip);
-    printf("the port : %d\n", result->port);
+    struct CmdParams params = parseOptions(argc, argv);
+    printf("the directory : %s\n", params.fileName);
+    printf("matche result: %s\n", params.ip);
+    printf("the port : %d\n", params.port);
 
-    int serverSockfd;
     int serverRtpSockfd, serverRtcpSockfd;
-    int ret;
 
     SocketConnection conn;
+    TcpServer server("0.0.0.0", SERVER_PORT);
 
-    serverSockfd = conn.createTcpSocket();
-    if(serverSockfd < 0)
-    {
-        printf("failed to create tcp socket\n");
-        return -1;
-    }
-
-    ret = conn.bindSocketAddr(serverSockfd, "0.0.0.0", SERVER_PORT);
-    if(ret < 0)
-    {
-        printf("failed to bind addr\n");
-        return -1;
-    }
-
-    ret = listen(serverSockfd, 10);
-    if(ret < 0)
-    {
-        printf("failed to listen\n");
-        return -1;
-    }
-
-    serverRtpSockfd = conn.createUdpSocket();
-    serverRtcpSockfd = conn.createUdpSocket();
+    UdpSocket serverRtp;
+    UdpSocket serverRtcp;
+    serverRtpSockfd = serverRtp.fd();
+    serverRtcpSockfd = serverRtcp.fd();
     if(serverRtpSockfd < 0 || serverRtcpSockfd < 0)
     {
         printf("failed to create udp socket\n");
@@ -390,24 +553,21 @@ int main(int argc, char *argv[])
 
     g_serverRtpSockfd = serverRtpSockfd;
 
-    if(conn.bindSocketAddr(serverRtpSockfd, "0.0.0.0", SERVER_RTP_PORT) < 0 ||
-        conn.bindSocketAddr(serverRtcpSockfd, "0.0.0.0", SERVER_RTCP_PORT) < 0)
+    if (serverRtp.bind("0,0,0,0", SERVER_RTP_PORT) < 0 ||
+            serverRtcp.bind("0.0.0.0", SERVER_RTCP_PORT) < 0)
     {
         printf("failed to bind addr\n");
         return -1;
     }
 
-    printf("rtsp://127.0.0.1:%d\n", SERVER_PORT);
-
     ThreadPool pool(3);
-
     while(1)
     {
         int clientSockfd;
         char clientIp[40];
         int clientPort;
 
-        clientSockfd = conn.acceptClient(serverSockfd, clientIp, &clientPort);
+        clientSockfd = server.accept(clientIp, &clientPort);
         if(clientSockfd < 0)
         {
             printf("failed to accept client\n");
@@ -416,14 +576,10 @@ int main(int argc, char *argv[])
 
         printf("accept client;client ip:%s,client port:%d\n", clientIp, clientPort);
 
-//        std::thread *tt = new std::thread(doClient, clientSockfd, clientIp, clientPort, serverRtpSockfd, serverRtcpSockfd, g_task[0]);
-//        tt->join();
-
         TaskParams *taskParams = new TaskParams{clientSockfd, clientIp, clientPort, serverRtpSockfd, serverRtcpSockfd, g_task[0]};
         ThreadPool::Task task1;
         task1.setTaskCallback(handleTaskCallback, (void *)taskParams);
         pool.addTask(task1);
-//        doClient(clientSockfd, clientIp, clientPort, serverRtpSockfd, serverRtcpSockfd, g_task[0]);
     }
 
     getchar();
