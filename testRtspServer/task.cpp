@@ -174,8 +174,8 @@ void Task::handleH264Data()
         if (mCurTime != mFirstTime) {
             int fps = (mFrames * 1000) / (mCurTime - mFirstTime);
             mFps = fps;
-            printf("the cur - first value: %lld\n", (mCurTime - mFirstTime));
-            printf("cur fps is: %d\n", fps);
+//            printf("the cur - first value: %lld\n", (mCurTime - mFirstTime));
+//            printf("cur fps is: %d\n", fps);
 //            if (fps <= 23 && fps > 0) {
 //                cancelVideoTimer();
 
@@ -254,7 +254,7 @@ ino64_t Task::getTime()
     struct timeval tv;
     gettimeofday(&tv , NULL);
     int64_t msec =  tv.tv_sec * 1000.0 + tv.tv_usec / 1000.0;
-    printf("the msec is : %lld\n", msec);
+//    printf("the msec is : %lld\n", msec);
     return msec;
 //    timestamp_increse = (uint)(90000.0 / (1000.0 / ((tv.tv_sec - tv_pre.tv_sec) * 1000.0 + (tv.tv_usec - tv_pre.tv_usec) / 1000.0)));
 

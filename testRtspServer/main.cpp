@@ -37,6 +37,8 @@
 #include <regex>
 #include <string>
 
+#include <poll.h>
+
 #define SERVER_PORT     8554
 #define SERVER_RTP_PORT  55532
 #define SERVER_RTCP_PORT 55533
@@ -561,25 +563,41 @@ int main(int argc, char *argv[])
     }
 
     ThreadPool pool(3);
+
+    std::vector<struct pollfd> plist;
+
+    struct pollfd pp;
+    pp.fd = server.mFd;
+    pp.events = 0;
+    pp.events |= POLLIN;
+    pp.revents = 0;
+
+    plist.push_back(pp);
+
+
     while(1)
     {
         int clientSockfd;
         char clientIp[40];
         int clientPort;
 
-        clientSockfd = server.accept(clientIp, &clientPort);
-        if(clientSockfd < 0)
-        {
-            printf("failed to accept client\n");
-            return -1;
+
+        int nums = poll(&*plist.begin(), 1, 10000);
+        if (nums > 0) {
+            clientSockfd = server.accept(clientIp, &clientPort);
+            if(clientSockfd < 0)
+            {
+                printf("failed to accept client\n");
+                return -1;
+            }
+
+            printf("accept client;client ip:%s,client port:%d\n", clientIp, clientPort);
+
+            TaskParams *taskParams = new TaskParams{clientSockfd, clientIp, clientPort, serverRtpSockfd, serverRtcpSockfd, g_task[0]};
+            ThreadPool::Task task1;
+            task1.setTaskCallback(handleTaskCallback, (void *)taskParams);
+            pool.addTask(task1);
         }
-
-        printf("accept client;client ip:%s,client port:%d\n", clientIp, clientPort);
-
-        TaskParams *taskParams = new TaskParams{clientSockfd, clientIp, clientPort, serverRtpSockfd, serverRtcpSockfd, g_task[0]};
-        ThreadPool::Task task1;
-        task1.setTaskCallback(handleTaskCallback, (void *)taskParams);
-        pool.addTask(task1);
     }
 
     getchar();

@@ -53,7 +53,8 @@ int Mp4File::aac_decode_extradata(ADTSContext *adts, unsigned char *pbuf, int bu
 
 int Mp4File::aac_set_adts_head(ADTSContext *acfg, unsigned char *buf, int size) {
       unsigned char byte;
-      if (size < ADTS_HEADER_SIZE) {
+//      if (size < ADTS_HEADER_SIZE) {
+      if (size <= 0) {
           printf("%s, run aac_set_adts_head failed, input size %d < ADTS_HEADER_SIZE\n", TAG, size);
           return -1;
       }
@@ -102,6 +103,15 @@ int Mp4File::openFile(const char *fileName)
     /* dump input information to stderr */
     av_dump_format(m_fmt_ctx, 0, m_src_filename, 0);
 
+    const char *formatName = m_fmt_ctx->iformat->long_name;
+    printf("the input file format name: %s\n", formatName);
+
+    int64_t duration = m_fmt_ctx->duration;
+    printf("the total time: %ld\n", duration / 1000000);
+
+    int streams = m_fmt_ctx->nb_streams;
+    printf("the stream is: %d\n", streams);
+
     //find video stream index
     int ret = av_find_best_stream(m_fmt_ctx, AVMEDIA_TYPE_VIDEO, -1, -1, NULL, 0);
     if (ret < 0) {
@@ -110,6 +120,12 @@ int Mp4File::openFile(const char *fileName)
         return ret;
     } else {
         m_video_stream_idx = ret;
+        int frametrate = m_fmt_ctx->streams[m_video_stream_idx]->avg_frame_rate.num / m_fmt_ctx->streams[m_video_stream_idx]->avg_frame_rate.den;
+        int width = m_fmt_ctx->streams[m_video_stream_idx]->codec->width;
+        int height = m_fmt_ctx->streams[m_video_stream_idx]->codec->height;
+        int frames = m_fmt_ctx->streams[m_video_stream_idx]->nb_frames; //nb_frames may be is 0
+
+        printf("the video stream width: %d, the height: %d, the frame rate: %d, total frames: %d\n", width, height, frametrate, frames);
     }
 
     //find audio stream index
@@ -120,6 +136,16 @@ int Mp4File::openFile(const char *fileName)
         return ret;
     } else {
         m_audio_stream_idx = ret;
+
+
+        /**
+         * sometimes, we will not get valid value with samplerate, channels etc.
+         * we need to read some frames firstly, than we can get valud value
+         */
+        int sampletrate = m_fmt_ctx->streams[m_audio_stream_idx]->codec->sample_rate;
+        int channel = m_fmt_ctx->streams[m_audio_stream_idx]->codec->channels;
+        int profile = m_fmt_ctx->streams[m_audio_stream_idx]->codec->profile;
+        printf("the audio stream channel: %d, the sample rate: %d, the profile: %d\n", channel, sampletrate, profile);
     }
 
     m_video_bsf = av_bitstream_filter_init("h264_mp4toannexb");
@@ -163,13 +189,15 @@ Mp4File::PacketItem * Mp4File::getOneFrame()
 //            printf("out data: %02x %02x %02x %02x\n", out_data[0], out_data[1], out_data[2], out_data[3]);
 //            printf("pkt data: %02x %02x %02x %02x\n", pkt.data[0], pkt.data[1], pkt.data[2], pkt.data[3]);
 
-            printf("get video frame pts: %ld, dts: %ld\n", pkt.pts, pkt.dts);
+//            printf("get video frame pts: %ld, dts: %ld\n", pkt.pts, pkt.dts);
 
             PacketItem *item = new PacketItem();
             item->type = PacketType::PACKET_VIDEO;
 //            item->length = pkt.size;
 //            memcpy(item->data, (char *)(pkt.data), pkt.size);
 
+            item->pts = pkt.pts;
+            item->duration = pkt.duration;
             item->length = out_size;
             memcpy(item->data, (char *)out_data, out_size);
 //            printf("video frame %02x %02x %02x %02x \n", item->data[0], item->data[1], item->data[2], item->data[3]);
@@ -184,7 +212,7 @@ Mp4File::PacketItem * Mp4File::getOneFrame()
 //            printf("the extra data size: %d\n", m_fmt_ctx->streams[m_audio_stream_idx]->codec->extradata_size);
 
 //            unsigned char adtsHdr[ADTS_HEADER_SIZE] = {0};
-//            aac_set_adts_head(&m_adts_ctx, adtsHdr, pkt.size + 7);
+//            aac_set_adts_head(&m_adts_ctx, adtsHdr, pkt.size);
 
 //            rtp g_rtp;
 //            struct AdtsHeader adtsHeader;
@@ -192,7 +220,7 @@ Mp4File::PacketItem * Mp4File::getOneFrame()
 
 //            printf("the pckt size: %d, the length: %d", pkt.size, adtsHeader.aacFrameLength - 7);
 
-            printf("get audio frame pts: %ld, dts: %ld\n", pkt.pts, pkt.dts);
+//            printf("get audio frame pts: %ld, dts: %ld\n", pkt.pts, pkt.dts);
 
             PacketItem *item = new PacketItem();
 //            item->length =  adtsHeader.aacFrameLength - 7;

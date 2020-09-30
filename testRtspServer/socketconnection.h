@@ -21,6 +21,11 @@ class SocketConnection
 public:
     SocketConnection();
 
+    int connect(bool isTcp, char *ip, int port);
+    void disConnect();
+//    static char *readLine(char *buf, char *line);
+
+//private:
     int createTcpSocket();
     int createUdpSocket();
     int bindSocketAddr(int sockfd, const char* ip, int port);
@@ -28,13 +33,7 @@ public:
 
     static char* getLineFromBuf(char* buf, char* line);
 
-    void doClient(int clientSockfd, const char* clientIP, int clientPort,
-                            int serverRtpSockfd, int serverRtcpSockfd);
-
-    int handleCmd_OPTIONS(char* result, int cseq);
-    int handleCmd_DESCRIBE(char* result, int cseq, char* url);
-    int handleCmd_SETUP(char* result, int cseq, int clientRtpPort);
-    int handleCmd_PLAY(char* result, int cseq);
+    int m_socket_fd;
 };
 
 #endif // SOCKETCONNECTION_H

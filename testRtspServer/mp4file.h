@@ -42,14 +42,28 @@ public:
 
     struct PacketItem{
         int length;
+        int64_t pts;
+        int64_t duration;
         char *data;
         PacketType type;
 
         PacketItem()
         {
             length = -1;
+            pts = 0;
+            duration = 0;
             type = PACKET_UNKNOWN;
             data = (char *)malloc(500000);
+            memset(data, 0, 500000);
+        }
+
+        void copy(PacketItem *other)
+        {
+            length = other->length;
+            type = other->type;
+            pts = other->pts;
+            duration = other->duration;
+            memcpy(data, other->data, other->length);
         }
     };
 

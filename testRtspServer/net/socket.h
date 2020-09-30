@@ -15,23 +15,46 @@
 //#include <netinet/in.h>
 #include <net/if.h>
 
-class Socket
-{
-public:
-    Socket();
+//class Socket
+//{
+//public:
+//    Socket();
 
-    int createTcpSocket();
-    int cretaeUdpSocket();
-    bool bind(int sockfd, std::string ip, u_int16_t port);
-    bool listen(int sockfd, int backlog);
-    int accept(int sockfd);
-    std::string getPerrIp(int sockfd);
-    int16_t getPeerPort(int sockfd);
-    int getPerrAddr(int sockfd, struct sockaddr_in *addr);
-    void close(int sockfd);
-    bool connect(int sockfd, std::string ip, u_int16_t port, int timeout);
-    std::string getLocalIp();
+//    int createTcpSocket();
+//    int cretaeUdpSocket();
+//    bool bind(int sockfd, std::string ip, u_int16_t port);
+//    bool listen(int sockfd, int backlog);
+//    int accept(int sockfd);
+//    std::string getPerrIp(int sockfd);
+//    int16_t getPeerPort(int sockfd);
+//    int getPerrAddr(int sockfd, struct sockaddr_in *addr);
+//    void close(int sockfd);
+//    bool connect(int sockfd, std::string ip, u_int16_t port, int timeout);
+//    std::string getLocalIp();
 
-};
+//};
+
+
+int createTcpSocket();
+
+int cretaeUdpSocket();
+
+bool bind(int sockfd, std::string ip, u_int16_t port);
+
+bool listenConnect(int sockfd, int backlog);
+
+int accept(int sockfd);
+
+std::string getPerrIp(int sockfd);
+
+int16_t getPeerPort(int sockfd);
+
+int getPerrAddr(int sockfd, struct sockaddr_in *addr);
+
+void closeSocket(int sockfd);
+
+bool connect(int sockfd, std::string ip, u_int16_t port, int timeout);
+
+std::string getLocalIp();
 
 #endif // SOCKET_H

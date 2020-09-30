@@ -89,3 +89,36 @@ char* SocketConnection::getLineFromBuf(char* buf, char* line)
     ++buf;
     return buf;
 }
+
+
+int SocketConnection::connect(bool isTcp, char *ip, int port)
+{
+    if (isTcp) {
+        m_socket_fd = createTcpSocket();
+    } else {
+        m_socket_fd = createUdpSocket();
+    }
+
+    bindSocketAddr(m_socket_fd, ip, port);
+
+    int ret = listen(m_socket_fd, 10);
+    if(ret < 0)
+    {
+        printf("failed to listen\n");
+        return -1;
+    }
+
+    acceptClient(m_socket_fd, ip, &port);
+
+    return 0;
+}
+
+void SocketConnection::disConnect()
+{
+
+}
+
+//static char * SocketConnection::readLine(char *buf, char *line)
+//{
+//    return getLineFromBuf(buf, line);
+//}
