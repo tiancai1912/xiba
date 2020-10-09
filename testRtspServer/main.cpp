@@ -22,7 +22,7 @@
 #include <fcntl.h>
 #include <assert.h>
 #include "net/rtp.h"
-#include "socketconnection.h"
+#include "net/socketconnection.h"
 #include "mp4file.h"
 #include "base/mytimer.h"
 #include "base/blockqueue.h"
@@ -38,6 +38,11 @@
 #include <string>
 
 #include <poll.h>
+
+#include "3rd/eventscheduler.h"
+
+#include "net/tcpserver.h"
+#include "server.h"
 
 #define SERVER_PORT     8554
 #define SERVER_RTP_PORT  55532
@@ -382,93 +387,93 @@ private:
     void bind();
 };
 
-class TcpServer
-{
-public:
-    TcpServer(const char *ip, int port);
-    ~TcpServer();
+//class TcpServer
+//{
+//public:
+//    TcpServer(const char *ip, int port);
+//    ~TcpServer();
 
-    int accept(char *ip, int *port);
-private:
-    int create();
-    bool bind();
-    void listen();
+//    int accept(char *ip, int *port);
+//private:
+//    int create();
+//    bool bind();
+//    void listen();
 
-public:
-    SocketConnection conn;
-    int mFd;
-    char *mIp;
-    int mPort;
-};
+//public:
+//    SocketConnection conn;
+//    int mFd;
+//    char *mIp;
+//    int mPort;
+//};
 
-TcpServer::TcpServer(const char *ip, int port)
-{
-    mIp = (char *)malloc(256);
-    memset(mIp, 0, sizeof(char) * 256);
-    strcpy(mIp, ip);
+//TcpServer::TcpServer(const char *ip, int port)
+//{
+//    mIp = (char *)malloc(256);
+//    memset(mIp, 0, sizeof(char) * 256);
+//    strcpy(mIp, ip);
 
-    mPort = port;
-    mFd = create();
+//    mPort = port;
+//    mFd = create();
 
-    bind();
-    listen();
-}
+//    bind();
+//    listen();
+//}
 
-int TcpServer::create()
-{
-    int sockfd;
-    int on = 1;
+//int TcpServer::create()
+//{
+//    int sockfd;
+//    int on = 1;
 
-    sockfd = socket(AF_INET, SOCK_STREAM, 0);
-    if(sockfd < 0)
-        return -1;
+//    sockfd = socket(AF_INET, SOCK_STREAM, 0);
+//    if(sockfd < 0)
+//        return -1;
 
-    setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, (const char*)&on, sizeof(on));
+//    setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, (const char*)&on, sizeof(on));
 
-    return sockfd;
-}
+//    return sockfd;
+//}
 
-TcpServer::~TcpServer()
-{
-}
+//TcpServer::~TcpServer()
+//{
+//}
 
-int TcpServer::accept(char *ip, int *port)
-{
-    int clientfd;
-    socklen_t len = 0;
-    struct sockaddr_in addr;
+//int TcpServer::accept(char *ip, int *port)
+//{
+//    int clientfd;
+//    socklen_t len = 0;
+//    struct sockaddr_in addr;
 
-    memset(&addr, 0, sizeof(addr));
-    len = sizeof(addr);
+//    memset(&addr, 0, sizeof(addr));
+//    len = sizeof(addr);
 
-    clientfd = ::accept(mFd, (struct sockaddr *)&addr, &len);
-    if(clientfd < 0)
-        return -1;
+//    clientfd = ::accept(mFd, (struct sockaddr *)&addr, &len);
+//    if(clientfd < 0)
+//        return -1;
 
-    strcpy(ip, inet_ntoa(addr.sin_addr));
-    *port = ntohs(addr.sin_port);
+//    strcpy(ip, inet_ntoa(addr.sin_addr));
+//    *port = ntohs(addr.sin_port);
 
-    return clientfd;
-}
+//    return clientfd;
+//}
 
-bool TcpServer::bind()
-{
-    struct sockaddr_in addr;
+//bool TcpServer::bind()
+//{
+//    struct sockaddr_in addr;
 
-    addr.sin_family = AF_INET;
-    addr.sin_port = htons(mPort);
-    addr.sin_addr.s_addr = inet_addr(mIp);
+//    addr.sin_family = AF_INET;
+//    addr.sin_port = htons(mPort);
+//    addr.sin_addr.s_addr = inet_addr(mIp);
 
-    if(::bind(mFd, (struct sockaddr *)&addr, sizeof(struct sockaddr)) < 0)
-        return false;
+//    if(::bind(mFd, (struct sockaddr *)&addr, sizeof(struct sockaddr)) < 0)
+//        return false;
 
-    return true;
-}
+//    return true;
+//}
 
-void TcpServer::listen()
-{
-    ::listen(mFd, 10);
-}
+//void TcpServer::listen()
+//{
+//    ::listen(mFd, 10);
+//}
 
 class UdpSocket
 {
@@ -530,7 +535,6 @@ int UdpSocket::create()
     return sockfd;
 }
 
-
 int main(int argc, char *argv[])
 {
     struct CmdParams params = parseOptions(argc, argv);
@@ -541,7 +545,7 @@ int main(int argc, char *argv[])
     int serverRtpSockfd, serverRtcpSockfd;
 
     SocketConnection conn;
-    TcpServer server("0.0.0.0", SERVER_PORT);
+//    TcpServer server("0.0.0.0", SERVER_PORT);
 
     UdpSocket serverRtp;
     UdpSocket serverRtcp;
@@ -564,42 +568,61 @@ int main(int argc, char *argv[])
 
     ThreadPool pool(3);
 
-    std::vector<struct pollfd> plist;
+    Server server("0.0.0.0", 8554);
+    server.start();
 
-    struct pollfd pp;
-    pp.fd = server.mFd;
-    pp.events = 0;
-    pp.events |= POLLIN;
-    pp.revents = 0;
+//    std::vector<struct pollfd> plist;
 
-    plist.push_back(pp);
+//    struct pollfd pp;
+//    pp.fd = server.mFd;
+//    pp.events = 0;
+//    pp.events |= POLLIN;
+//    pp.revents = 0;
 
-
-    while(1)
-    {
-        int clientSockfd;
-        char clientIp[40];
-        int clientPort;
+//    plist.push_back(pp);
 
 
-        int nums = poll(&*plist.begin(), 1, 10000);
-        if (nums > 0) {
-            clientSockfd = server.accept(clientIp, &clientPort);
-            if(clientSockfd < 0)
-            {
-                printf("failed to accept client\n");
-                return -1;
-            }
 
-            printf("accept client;client ip:%s,client port:%d\n", clientIp, clientPort);
 
-            TaskParams *taskParams = new TaskParams{clientSockfd, clientIp, clientPort, serverRtpSockfd, serverRtcpSockfd, g_task[0]};
-            ThreadPool::Task task1;
-            task1.setTaskCallback(handleTaskCallback, (void *)taskParams);
-            pool.addTask(task1);
-        }
-    }
+//    while(1)
+//    {
+//        int clientSockfd;
+//        char clientIp[40];
+//        int clientPort;
+
+//        int nums = poll(&*plist.begin(), 1, 10000);
+//        if (nums > 0) {
+//            clientSockfd = server.accept(clientIp, &clientPort);
+//            if(clientSockfd < 0)
+//            {
+//                printf("failed to accept client\n");
+//                return -1;
+//            }
+
+//            printf("accept client;client ip:%s,client port:%d\n", clientIp, clientPort);
+
+//            TaskParams *taskParams = new TaskParams{clientSockfd, clientIp, clientPort, serverRtpSockfd, serverRtcpSockfd, g_task[0]};
+//            ThreadPool::Task task1;
+//            task1.setTaskCallback(handleTaskCallback, (void *)taskParams);
+//            pool.addTask(task1);
+//        }
+//    }
 
     getchar();
     return 0;
 }
+
+//{
+
+//    EventScheduler *scheduler = EventScheduler::createNew(EventScheduler::PollerType::POLLER_POLL);
+//    TimerEvent *event = TimerEvent::createNew(NULL);
+//    event->setTimeoutCallback(callback1);
+//    scheduler->addTimedEventRunEvery(event, 1000);
+
+//    TimerEvent *event2 = TimerEvent::createNew(NULL);
+//    event2->setTimeoutCallback(callback2);
+//    scheduler->addTimedEventRunEvery(event2, 5000);
+
+//    scheduler->loop();
+
+//}

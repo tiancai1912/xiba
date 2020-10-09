@@ -10,7 +10,6 @@ CONFIG -= app_bundle
 TEMPLATE = app
 
 SOURCES += main.cpp \
-    socketconnection.cpp \
     mp4file.cpp \
     base/blockqueue.cpp \
     base/mytimer.cpp \
@@ -22,10 +21,16 @@ SOURCES += main.cpp \
     base/condition.cpp \
     base/thread.cpp \
     base/threadpool.cpp \
-    net/tcpsession.cpp
+    3rd/eventscheduler.cpp \
+    3rd/ioevent.cpp \
+    3rd/poller.cpp \
+    3rd/pollpoller.cpp \
+    3rd/timer2.cpp \
+    server.cpp \
+    net/tcpserver.cpp \
+    net/socketconnection.cpp
 
 HEADERS += \
-    socketconnection.h \
     mp4file.h \
     base/blockqueue.h \
     base/mytimer.h \
@@ -37,7 +42,14 @@ HEADERS += \
     base/condition.h \
     base/thread.h \
     base/threadpool.h \
-    net/tcpsession.h
+    3rd/eventscheduler.h \
+    3rd/ioevent.h \
+    3rd/poller.h \
+    3rd/pollpoller.h \
+    3rd/timer2.h \
+    server.h \
+    net/tcpserver.h \
+    net/socketconnection.h
 
 INCLUDEPATH += /usr/local/ffmpeg/include
 
