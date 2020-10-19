@@ -28,7 +28,13 @@ SOURCES += main.cpp \
     3rd/timer2.cpp \
     server.cpp \
     net/tcpserver.cpp \
-    net/socketconnection.cpp
+    net/socketconnection.cpp \
+    base/buffer.cpp \
+    net/socketsops.cpp \
+    sink.cpp \
+    stream.cpp \
+    mediasource.cpp \
+    rtphandler.cpp
 
 HEADERS += \
     mp4file.h \
@@ -49,7 +55,13 @@ HEADERS += \
     3rd/timer2.h \
     server.h \
     net/tcpserver.h \
-    net/socketconnection.h
+    net/socketconnection.h \
+    base/buffer.h \
+    net/socketsops.h \
+    sink.h \
+    stream.h \
+    mediasource.h \
+    rtphandler.h
 
 INCLUDEPATH += /usr/local/ffmpeg/include
 

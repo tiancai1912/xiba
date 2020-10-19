@@ -19,22 +19,22 @@ bool Server::start()
     mTcpServer = new TcpServer(mIp, mPort);
 
     mTcpEvent = IOEvent::createNew(mTcpServer->mFd, this);
-    mTcpEvent->setReadCallback(handleReadCallback);
+    mTcpEvent->setReadCallback(newConnectionCallback);
     mTcpEvent->enableReadHandling();
     mScheduler->addIOEvent(mTcpEvent);
     mScheduler->loop();
 }
 
-void Server::handleReadCallback(void *arg)
+void Server::newConnectionCallback(void *arg)
 {
     Server *server = (Server *)arg;
-    server->handleRead();
+    server->newConnection();
 }
 
-void Server::handleRead()
+void Server::newConnection()
 {
-    RtspConnection connection;
-    connection.mSocketId = mTcpServer->accept(connection.mPeerIp, &connection.mPerrPort);
+    RtspConnection *connection = new RtspConnection();
+    connection->mSocketId = mTcpServer->accept(connection->mPeerIp, &connection->mPerrPort);
     mConnections.push_back(connection);
-    printf("the socketid: %d, the ip: %s, the port: %d\n", connection.mSocketId, connection.mPeerIp, connection.mPerrPort);
+    printf("the socketid: %d, the ip: %s, the port: %d\n", connection->mSocketId, connection->mPeerIp, connection->mPerrPort);
 }

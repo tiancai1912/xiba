@@ -7,6 +7,36 @@
 
 #define MAX_PEER_IP 128
 
+typedef void (*callback) (void *arg);
+
+class RtspConnection
+{
+public:
+
+    RtspConnection()
+    {
+        mSocketId = -1;
+        mPerrPort = -1;
+        memset(mPeerIp, 0, MAX_PEER_IP);
+    }
+
+    void handleMsg(char *msg);
+
+    void handleOptionCmd();
+    void handleDescribeCmd();
+    void handleSetupCmd();
+    void handlePlayCmd();
+    void handlePauseCmd();
+    void handleTeardownCmd();
+
+    int getPeerPort();
+    char *getPeerIp();
+
+    int mSocketId;
+    int mPerrPort;
+    char mPeerIp[MAX_PEER_IP];
+};
+
 class Server
 {
 public:
@@ -15,23 +45,11 @@ public:
 
     bool start();
 
-    struct RtspConnection
-    {
-      int mSocketId;
-      int mPerrPort;
-      char mPeerIp[MAX_PEER_IP];
+    static void newConnectionCallback(void *arg);
+    void newConnection();
 
-      RtspConnection()
-      {
-          mSocketId = -1;
-          mPerrPort = -1;
-          memset(mPeerIp, 0, MAX_PEER_IP);
-      }
-    };
-
-    static void handleReadCallback(void *arg);
-    void handleRead();
-
+    bool addSink();
+    void removeSink();
 
 private:
     char *mIp;
@@ -40,7 +58,7 @@ private:
     EventScheduler *mScheduler;
     TcpServer *mTcpServer;
     IOEvent *mTcpEvent;
-    std::vector<RtspConnection> mConnections;
+    std::vector<RtspConnection *> mConnections;
 };
 
 #endif // SERVER_H
