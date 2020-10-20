@@ -3,6 +3,8 @@
 
 #include <QMainWindow>
 
+#include "videoparser.h"
+
 namespace Ui {
 class MainWindow;
 }
@@ -28,8 +30,12 @@ private slots:
 
     void on_mBtnSetItem_clicked();
 
+    void on_pushButton_clicked();
+
 private:
     Ui::MainWindow *ui;
+
+    VideoParser *mParser;
 };
 
 #endif // MAINWINDOW_H

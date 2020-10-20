@@ -56,6 +56,7 @@ MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
     ui(new Ui::MainWindow)
 {
+    mParser = new VideoParser();
     ui->setupUi(this);
 }
 
@@ -135,4 +136,19 @@ void MainWindow::on_mBtnSetItem_clicked()
         }
     }
 
+}
+
+void MainWindow::on_pushButton_clicked()
+{
+    mParser->openFile("test.mp4");
+    int num = 0;
+    while(num < 3000) {
+        VideoParser::PacketItem *item = mParser->readNaluItems();
+        mParser->parseNaluItem(item);
+        delete item;
+        item = NULL;
+        num++;
+    }
+
+    mParser->closeFile();
 }

@@ -13,8 +13,17 @@ TEMPLATE = app
 
 
 SOURCES += main.cpp\
-        mainwindow.cpp
+        mainwindow.cpp \
+    videoparser.cpp
 
-HEADERS  += mainwindow.h
+HEADERS  += mainwindow.h \
+    videoparser.h
 
 FORMS    += mainwindow.ui
+
+
+INCLUDEPATH += /usr/local/ffmpeg/include
+
+LIBS += /usr/local/ffmpeg/lib/libavformat.so \
+        /usr/local/ffmpeg/lib/libavcodec.so \
+        /usr/local/ffmpeg/lib/libavutil.so
