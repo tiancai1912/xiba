@@ -115,6 +115,19 @@
      <string>PushButton</string>
     </property>
    </widget>
+   <widget class="QPushButton" name="mBtnHidNum">
+    <property name="geometry">
+     <rect>
+      <x>10</x>
+      <y>300</y>
+      <width>89</width>
+      <height>25</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>hide num</string>
+    </property>
+   </widget>
   </widget>
   <widget class="QMenuBar" name="menuBar">
    <property name="geometry">
@@ -122,7 +135,7 @@
      <x>0</x>
      <y>0</y>
      <width>659</width>
-     <height>25</height>
+     <height>22</height>
     </rect>
    </property>
   </widget>

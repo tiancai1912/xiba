@@ -152,3 +152,8 @@ void MainWindow::on_pushButton_clicked()
 
     mParser->closeFile();
 }
+
+void MainWindow::on_mBtnHidNum_clicked()
+{
+    ui->mTable->verticalHeader()->setHidden(true);
+}
