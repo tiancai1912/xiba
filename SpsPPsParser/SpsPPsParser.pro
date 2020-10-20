@@ -17,6 +17,7 @@ SOURCES += main.cpp\
     videoparser.cpp
 
 HEADERS  += mainwindow.h \
+    bs.h \
     videoparser.h
 
 FORMS    += mainwindow.ui

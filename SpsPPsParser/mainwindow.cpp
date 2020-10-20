@@ -24,7 +24,7 @@ MainWindow::~MainWindow()
 
 void MainWindow::on_actionOpen_triggered()
 {
-    mParser->openFile("test.mp4");
+    mParser->openFile("foreman_cif.h264");
 
     int count = 0;
     while(count < MAX_NALU_READ_SIZE) {
@@ -47,9 +47,11 @@ void MainWindow::on_actionOpen_triggered()
            case NALU_SPS:
                qDebug() << "SPS Nalu" << endl;
                setTableItem(count, "sps");
+
+               mParser->read_nal_unit((unsigned char *)(item->data + 4), item->length - 4);
                break;
            case NALU_PPS:
-               qDebug() << "PPS Nalu" << endl;
+//               qDebug() << "PPS Nalu" << endl;
                setTableItem(count, "pps");
                break;
            default:
@@ -61,6 +63,8 @@ void MainWindow::on_actionOpen_triggered()
            count ++;
         }
     }
+
+    mParser->closeFile();
 }
 
 
@@ -73,11 +77,12 @@ void MainWindow::initTable()
     ui->mTable->setColumnCount(headers.count());
     ui->mTable->setRowCount(MAX_NALU_READ_SIZE);
     ui->mTable->setHorizontalHeaderLabels(headers);
+    ui->mTable->verticalHeader()->setHidden(true);
 }
 
 void MainWindow::setTableItem(int index, char *type)
 {
-    qDebug() << index << type << endl;
+//    qDebug() << index << type << endl;
     QTableWidgetItem *item;
 
     for (int j = 0; j < COLUMENUM; j++) {
