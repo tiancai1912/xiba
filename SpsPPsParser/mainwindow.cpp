@@ -137,43 +137,9 @@ QTreeWidgetItem * MainWindow::addItem(QTreeWidgetItem *src, QString dst)
     return src;
 }
 
-//printf("======= SPS =======\n");
-//printf(" profile_idc : %d \n", sps->profile_idc );
-//printf(" constraint_set0_flag : %d \n", sps->constraint_set0_flag );
-//printf(" constraint_set1_flag : %d \n", sps->constraint_set1_flag );
-//printf(" constraint_set2_flag : %d \n", sps->constraint_set2_flag );
-//printf(" constraint_set3_flag : %d \n", sps->constraint_set3_flag );
-//printf(" constraint_set4_flag : %d \n", sps->constraint_set4_flag );
-//printf(" constraint_set5_flag : %d \n", sps->constraint_set5_flag );
-//printf(" reserved_zero_2bits : %d \n", sps->reserved_zero_2bits );
-//printf(" level_idc : %d \n", sps->level_idc );
-//printf(" seq_parameter_set_id : %d \n", sps->seq_parameter_set_id );
-//printf(" chroma_format_idc : %d \n", sps->chroma_format_idc );
-//printf(" separate_colour_plane_flag : %d \n", sps->separate_colour_plane_flag );
-//printf(" bit_depth_luma_minus8 : %d \n", sps->bit_depth_luma_minus8 );
-//printf(" bit_depth_chroma_minus8 : %d \n", sps->bit_depth_chroma_minus8 );
-//printf(" qpprime_y_zero_transform_bypass_flag : %d \n", sps->qpprime_y_zero_transform_bypass_flag );
-//printf(" seq_scaling_matrix_present_flag : %d \n", sps->seq_scaling_matrix_present_flag );
-////  int seq_scaling_list_present_flag[8];
-////  void* ScalingList4x4[6];
-////  int UseDefaultScalingMatrix4x4Flag[6];
-////  void* ScalingList8x8[2];
-////  int UseDefaultScalingMatrix8x8Flag[2];
-//printf(" log2_max_frame_num_minus4 : %d \n", sps->log2_max_frame_num_minus4 );
-//printf(" pic_order_cnt_type : %d \n", sps->pic_order_cnt_type );
-//  printf("   log2_max_pic_order_cnt_lsb_minus4 : %d \n", sps->log2_max_pic_order_cnt_lsb_minus4 );
-//  printf("   delta_pic_order_always_zero_flag : %d \n", sps->delta_pic_order_always_zero_flag );
-//  printf("   offset_for_non_ref_pic : %d \n", sps->offset_for_non_ref_pic );
-//  printf("   offset_for_top_to_bottom_field : %d \n", sps->offset_for_top_to_bottom_field );
-//  printf("   num_ref_frames_in_pic_order_cnt_cycle : %d \n", sps->num_ref_frames_in_pic_order_cnt_cycle );
-////  int offset_for_ref_frame[256];
-//printf(" max_num_ref_frames : %d \n", sps->max_num_ref_frames );
-//printf(" gaps_in_frame_num_value_allowed_flag : %d \n", sps->gaps_in_frame_num_value_allowed_flag );
-//printf(" pic_width_in_mbs_minus1 : %d \n", sps->pic_width_in_mbs_minus1 );
-//printf(" pic_height_in_map_units_minus1 : %d \n", sps->pic_height_in_map_units_minus1 );
-//printf(" frame_mbs_only_flag : %d \n", sps->frame_mbs_only_flag );
-//printf(" mb_adaptive_frame_field_flag : %d \n", sps->mb_adaptive_frame_field_flag );
-//printf(" direct_8x8_inference_flag : %d \n", sps->direct_8x8_inference_flag );
+
+
+
 //printf(" frame_cropping_flag : %d \n", sps->frame_cropping_flag );
 //  printf("   frame_crop_left_offset : %d \n", sps->frame_crop_left_offset );
 //  printf("   frame_crop_right_offset : %d \n", sps->frame_crop_right_offset );
@@ -231,6 +197,47 @@ QTreeWidgetItem * MainWindow::addItem(QTreeWidgetItem *src, QString dst)
 //printf(" dpb_output_delay_length_minus1 : %d \n", sps->hrd.dpb_output_delay_length_minus1 );
 //printf(" time_offset_length : %d \n", sps->hrd.time_offset_length );
 
+static QTreeWidgetItem *genItem(char *name, char *value)
+{
+    QString tmp;
+    tmp = tmp.sprintf(name, value);
+    QTreeWidgetItem *item = new QTreeWidgetItem();
+    item->setText(0, tmp);
+    return  item;
+}
+
+static QTreeWidgetItem *genItem(char *name, int value)
+{
+    QString tmp;
+    tmp = tmp.sprintf(name, value);
+    QTreeWidgetItem *item = new QTreeWidgetItem();
+    item->setText(0, tmp);
+    return  item;
+}
+
+static QTreeWidgetItem * addChildItem(QTreeWidgetItem *dst, char *name, char *value)
+{
+    QString tmp;
+    tmp = tmp.sprintf(name, value);
+    QTreeWidgetItem *item = new QTreeWidgetItem();
+    item->setText(0, tmp);
+
+    dst->addChild(item);
+
+    return item;
+}
+
+static QTreeWidgetItem * addChildItem(QTreeWidgetItem *dst, char *name, int value)
+{
+    QString tmp;
+    tmp = tmp.sprintf(name, value);
+    QTreeWidgetItem *item = new QTreeWidgetItem();
+    item->setText(0, tmp);
+
+    dst->addChild(item);
+    return item;
+}
+
 void MainWindow::setSpsTreeItem(sps_t *sps)
 {
     ui->mTreeWidget->clear();
@@ -238,9 +245,53 @@ void MainWindow::setSpsTreeItem(sps_t *sps)
     QTreeWidgetItem *topItem = new QTreeWidgetItem();
     topItem->setText(0, "Nalu");
 
-    QString tmp;
-    tmp = tmp.sprintf(" profile_idc : %d \n", sps->profile_idc);
-    addItem(topItem, tmp);
+    addChildItem(topItem, " ======= SPS =======", "");
+    addChildItem(topItem, " profile_idc : %d", sps->profile_idc);
+    addChildItem(topItem, " constraint_set0_flag : %d", sps->constraint_set0_flag);
+
+
+    addChildItem(topItem, " constraint_set1_flag : %d", sps->constraint_set1_flag);
+    addChildItem(topItem, " constraint_set2_flag : %d", sps->constraint_set2_flag);
+    addChildItem(topItem, " constraint_set3_flag : %d", sps->constraint_set3_flag);
+    addChildItem(topItem, " constraint_set4_flag : %d", sps->constraint_set4_flag);
+    addChildItem(topItem, " constraint_set5_flag : %d", sps->constraint_set5_flag);
+
+
+    addChildItem(topItem, " reserved_zero_2bits : %d", sps->reserved_zero_2bits);
+    addChildItem(topItem, " level_idc : %d", sps->level_idc);
+    addChildItem(topItem, " seq_parameter_set_id : %d", sps->seq_parameter_set_id);
+    addChildItem(topItem, " chroma_format_idc : %d", sps->chroma_format_idc);
+    addChildItem(topItem, " separate_colour_plane_flag : %d", sps->separate_colour_plane_flag);
+    addChildItem(topItem, " bit_depth_luma_minus8 : %d", sps->bit_depth_luma_minus8);
+    addChildItem(topItem, " bit_depth_chroma_minus8 : %d", sps->bit_depth_chroma_minus8);
+    addChildItem(topItem, " qpprime_y_zero_transform_bypass_flag : %d", sps->qpprime_y_zero_transform_bypass_flag);
+    addChildItem(topItem, " seq_scaling_matrix_present_flag : %d", sps->seq_scaling_matrix_present_flag);
+
+
+    addChildItem(topItem, " log2_max_frame_num_minus4 : %d", sps->log2_max_frame_num_minus4);
+    QTreeWidgetItem *tmp = addChildItem(topItem, " pic_order_cnt_type : %d", sps->pic_order_cnt_type);
+    addChildItem(tmp, " log2_max_pic_order_cnt_lsb_minus4 : %d", sps->log2_max_pic_order_cnt_lsb_minus4);
+    addChildItem(tmp, " delta_pic_order_always_zero_flag : %d", sps->delta_pic_order_always_zero_flag);
+    addChildItem(tmp, " offset_for_non_ref_pic : %d", sps->offset_for_non_ref_pic);
+    addChildItem(tmp, " offset_for_top_to_bottom_field : %d", sps->offset_for_top_to_bottom_field);
+    addChildItem(tmp, " num_ref_frames_in_pic_order_cnt_cycle : %d", sps->num_ref_frames_in_pic_order_cnt_cycle);
+    topItem->addChild(tmp);
+
+    addChildItem(topItem, " max_num_ref_frames : %d", sps->max_num_ref_frames);
+    addChildItem(topItem, " gaps_in_frame_num_value_allowed_flag : %d", sps->gaps_in_frame_num_value_allowed_flag);
+    addChildItem(topItem, " pic_width_in_mbs_minus1 : %d", sps->pic_width_in_mbs_minus1);
+    addChildItem(topItem, " pic_height_in_map_units_minus1 : %d", sps->pic_height_in_map_units_minus1);
+    addChildItem(topItem, " frame_mbs_only_flag : %d", sps->frame_mbs_only_flag);
+    addChildItem(topItem, " mb_adaptive_frame_field_flag : %d", sps->mb_adaptive_frame_field_flag);
+    addChildItem(topItem, " direct_8x8_inference_flag : %d", sps->direct_8x8_inference_flag);
+
+    //printf(" frame_cropping_flag : %d \n", sps->frame_cropping_flag );
+    //  printf("   frame_crop_left_offset : %d \n", sps->frame_crop_left_offset );
+    //  printf("   frame_crop_right_offset : %d \n", sps->frame_crop_right_offset );
+    //  printf("   frame_crop_top_offset : %d \n", sps->frame_crop_top_offset );
+    //  printf("   frame_crop_bottom_offset : %d \n", sps->frame_crop_bottom_offset );
+    //printf(" vui_parameters_present_flag : %d \n", sps->vui_parameters_present_flag );
+
 
     ui->mTreeWidget->addTopLevelItem(topItem);
 }
