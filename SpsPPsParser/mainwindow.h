@@ -2,6 +2,7 @@
 #define MAINWINDOW_H
 
 #include <QMainWindow>
+#include <QTreeWidgetItem>
 
 #include "videoparser.h"
 
@@ -20,6 +21,11 @@ public:
 protected:
     void initTable();
     void setTableItem(int index, char *type);
+
+    void setTreeItem();
+
+    void setSpsTreeItem(sps_t *sps);
+    QTreeWidgetItem * addItem(QTreeWidgetItem *src, QString dst);
 
 private slots:
     void on_actionOpen_triggered();

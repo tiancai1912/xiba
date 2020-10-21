@@ -193,6 +193,11 @@ bs_t* VideoParser::bs_init(bs_t* b, uint8_t* buf, size_t size)
     return b;
 }
 
+sps_t *VideoParser::getSps()
+{
+    return mSps;
+}
+
 bs_t* VideoParser::bs_new(uint8_t* buf, size_t size)
 {
     bs_t* b = (bs_t*)malloc(sizeof(bs_t));
@@ -209,10 +214,10 @@ int VideoParser::nal_to_rbsp(const int nal_header_size, const uint8_t* nal_buf, 
     for( i = nal_header_size; i < *nal_size; i++ )
     {
         // in NAL unit, 0x000000, 0x000001 or 0x000002 shall not occur at any byte-aligned position
-        if( ( count == 2 ) && ( nal_buf[i] < 0x03) )
-        {
-            return -1;
-        }
+//        if( ( count == 2 ) && ( nal_buf[i] < 0x03) )
+//        {
+//            return -1;
+//        }
 
         if( ( count == 2 ) && ( nal_buf[i] == 0x03) )
         {
@@ -309,6 +314,8 @@ int VideoParser::read_nal_unit(uint8_t* buf, int size)
 
                 nal->parsed = sps;
                 nal->sizeof_parsed = sizeof(sps_t);
+
+                mSps = sps;
                 break;
 
 //            case NAL_UNIT_TYPE_PPS:

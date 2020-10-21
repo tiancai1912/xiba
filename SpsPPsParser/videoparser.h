@@ -28,7 +28,7 @@ extern "C" {
 
 #define MAX_DATA_SIZE 100
 
-#define MAX_NALU_READ_SIZE 10
+#define MAX_NALU_READ_SIZE 500
 
 #define SAR_Extended      255        // Extended_SAR
 
@@ -223,6 +223,8 @@ public:
 
     bs_t* bs_init(bs_t* b, uint8_t* buf, size_t size);
 
+    sps_t *getSps();
+
 private:
     std::vector<PacketItem *> mPackets;
     int mFrameCount;
@@ -240,6 +242,8 @@ private:
     void read_rbsp_trailing_bits(bs_t* b);
 
     void debug_sps(sps_t* sps);
+
+    sps_t * mSps;
 
 };
 
