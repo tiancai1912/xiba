@@ -30,6 +30,9 @@ protected:
 private slots:
     void on_actionOpen_triggered();
 
+    virtual void dragEnterEvent(QDragEnterEvent* event);
+    virtual void dropEvent(QDropEvent *event);
+
 private:
     Ui::MainWindow *ui;
 

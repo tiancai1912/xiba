@@ -138,65 +138,6 @@ QTreeWidgetItem * MainWindow::addItem(QTreeWidgetItem *src, QString dst)
 }
 
 
-
-
-//printf(" frame_cropping_flag : %d \n", sps->frame_cropping_flag );
-//  printf("   frame_crop_left_offset : %d \n", sps->frame_crop_left_offset );
-//  printf("   frame_crop_right_offset : %d \n", sps->frame_crop_right_offset );
-//  printf("   frame_crop_top_offset : %d \n", sps->frame_crop_top_offset );
-//  printf("   frame_crop_bottom_offset : %d \n", sps->frame_crop_bottom_offset );
-//printf(" vui_parameters_present_flag : %d \n", sps->vui_parameters_present_flag );
-
-//printf("=== VUI ===\n");
-//printf(" aspect_ratio_info_present_flag : %d \n", sps->vui.aspect_ratio_info_present_flag );
-//  printf("   aspect_ratio_idc : %d \n", sps->vui.aspect_ratio_idc );
-//    printf("     sar_width : %d \n", sps->vui.sar_width );
-//    printf("     sar_height : %d \n", sps->vui.sar_height );
-//printf(" overscan_info_present_flag : %d \n", sps->vui.overscan_info_present_flag );
-//  printf("   overscan_appropriate_flag : %d \n", sps->vui.overscan_appropriate_flag );
-//printf(" video_signal_type_present_flag : %d \n", sps->vui.video_signal_type_present_flag );
-//  printf("   video_format : %d \n", sps->vui.video_format );
-//  printf("   video_full_range_flag : %d \n", sps->vui.video_full_range_flag );
-//  printf("   colour_description_present_flag : %d \n", sps->vui.colour_description_present_flag );
-//    printf("     colour_primaries : %d \n", sps->vui.colour_primaries );
-//    printf("   transfer_characteristics : %d \n", sps->vui.transfer_characteristics );
-//    printf("   matrix_coefficients : %d \n", sps->vui.matrix_coefficients );
-//printf(" chroma_loc_info_present_flag : %d \n", sps->vui.chroma_loc_info_present_flag );
-//  printf("   chroma_sample_loc_type_top_field : %d \n", sps->vui.chroma_sample_loc_type_top_field );
-//  printf("   chroma_sample_loc_type_bottom_field : %d \n", sps->vui.chroma_sample_loc_type_bottom_field );
-//printf(" timing_info_present_flag : %d \n", sps->vui.timing_info_present_flag );
-//  printf("   num_units_in_tick : %d \n", sps->vui.num_units_in_tick );
-//  printf("   time_scale : %d \n", sps->vui.time_scale );
-//  printf("   fixed_frame_rate_flag : %d \n", sps->vui.fixed_frame_rate_flag );
-//printf(" nal_hrd_parameters_present_flag : %d \n", sps->vui.nal_hrd_parameters_present_flag );
-//printf(" vcl_hrd_parameters_present_flag : %d \n", sps->vui.vcl_hrd_parameters_present_flag );
-//  printf("   low_delay_hrd_flag : %d \n", sps->vui.low_delay_hrd_flag );
-//printf(" pic_struct_present_flag : %d \n", sps->vui.pic_struct_present_flag );
-//printf(" bitstream_restriction_flag : %d \n", sps->vui.bitstream_restriction_flag );
-//  printf("   motion_vectors_over_pic_boundaries_flag : %d \n", sps->vui.motion_vectors_over_pic_boundaries_flag );
-//  printf("   max_bytes_per_pic_denom : %d \n", sps->vui.max_bytes_per_pic_denom );
-//  printf("   max_bits_per_mb_denom : %d \n", sps->vui.max_bits_per_mb_denom );
-//  printf("   log2_max_mv_length_horizontal : %d \n", sps->vui.log2_max_mv_length_horizontal );
-//  printf("   log2_max_mv_length_vertical : %d \n", sps->vui.log2_max_mv_length_vertical );
-//  printf("   num_reorder_frames : %d \n", sps->vui.num_reorder_frames );
-//  printf("   max_dec_frame_buffering : %d \n", sps->vui.max_dec_frame_buffering );
-
-//printf("=== HRD ===\n");
-//printf(" cpb_cnt_minus1 : %d \n", sps->hrd.cpb_cnt_minus1 );
-//printf(" bit_rate_scale : %d \n", sps->hrd.bit_rate_scale );
-//printf(" cpb_size_scale : %d \n", sps->hrd.cpb_size_scale );
-//int SchedSelIdx;
-//for( SchedSelIdx = 0; SchedSelIdx <= sps->hrd.cpb_cnt_minus1; SchedSelIdx++ )
-//{
-//    printf("   bit_rate_value_minus1[%d] : %d \n", SchedSelIdx, sps->hrd.bit_rate_value_minus1[SchedSelIdx] ); // up to cpb_cnt_minus1, which is <= 31
-//    printf("   cpb_size_value_minus1[%d] : %d \n", SchedSelIdx, sps->hrd.cpb_size_value_minus1[SchedSelIdx] );
-//    printf("   cbr_flag[%d] : %d \n", SchedSelIdx, sps->hrd.cbr_flag[SchedSelIdx] );
-//}
-//printf(" initial_cpb_removal_delay_length_minus1 : %d \n", sps->hrd.initial_cpb_removal_delay_length_minus1 );
-//printf(" cpb_removal_delay_length_minus1 : %d \n", sps->hrd.cpb_removal_delay_length_minus1 );
-//printf(" dpb_output_delay_length_minus1 : %d \n", sps->hrd.dpb_output_delay_length_minus1 );
-//printf(" time_offset_length : %d \n", sps->hrd.time_offset_length );
-
 static QTreeWidgetItem *genItem(char *name, char *value)
 {
     QString tmp;
@@ -238,9 +179,23 @@ static QTreeWidgetItem * addChildItem(QTreeWidgetItem *dst, char *name, int valu
     return item;
 }
 
+static QTreeWidgetItem * addChildItem(QTreeWidgetItem *dst, char *name, int value1, int value2)
+{
+    QString tmp;
+    tmp = tmp.sprintf(name, value1, value2);
+    QTreeWidgetItem *item = new QTreeWidgetItem();
+    item->setText(0, tmp);
+
+    dst->addChild(item);
+    return item;
+}
+
 void MainWindow::setSpsTreeItem(sps_t *sps)
 {
     ui->mTreeWidget->clear();
+
+    QTreeWidgetItem *tmp = NULL;
+    QTreeWidgetItem *tmp2 = NULL;
 
     QTreeWidgetItem *topItem = new QTreeWidgetItem();
     topItem->setText(0, "Nalu");
@@ -269,12 +224,12 @@ void MainWindow::setSpsTreeItem(sps_t *sps)
 
 
     addChildItem(topItem, " log2_max_frame_num_minus4 : %d", sps->log2_max_frame_num_minus4);
-    QTreeWidgetItem *tmp = addChildItem(topItem, " pic_order_cnt_type : %d", sps->pic_order_cnt_type);
-    addChildItem(tmp, " log2_max_pic_order_cnt_lsb_minus4 : %d", sps->log2_max_pic_order_cnt_lsb_minus4);
-    addChildItem(tmp, " delta_pic_order_always_zero_flag : %d", sps->delta_pic_order_always_zero_flag);
-    addChildItem(tmp, " offset_for_non_ref_pic : %d", sps->offset_for_non_ref_pic);
-    addChildItem(tmp, " offset_for_top_to_bottom_field : %d", sps->offset_for_top_to_bottom_field);
-    addChildItem(tmp, " num_ref_frames_in_pic_order_cnt_cycle : %d", sps->num_ref_frames_in_pic_order_cnt_cycle);
+    tmp = addChildItem(topItem, " pic_order_cnt_type : %d", sps->pic_order_cnt_type);
+        addChildItem(tmp, " log2_max_pic_order_cnt_lsb_minus4 : %d", sps->log2_max_pic_order_cnt_lsb_minus4);
+        addChildItem(tmp, " delta_pic_order_always_zero_flag : %d", sps->delta_pic_order_always_zero_flag);
+        addChildItem(tmp, " offset_for_non_ref_pic : %d", sps->offset_for_non_ref_pic);
+        addChildItem(tmp, " offset_for_top_to_bottom_field : %d", sps->offset_for_top_to_bottom_field);
+        addChildItem(tmp, " num_ref_frames_in_pic_order_cnt_cycle : %d", sps->num_ref_frames_in_pic_order_cnt_cycle);
     topItem->addChild(tmp);
 
     addChildItem(topItem, " max_num_ref_frames : %d", sps->max_num_ref_frames);
@@ -285,13 +240,90 @@ void MainWindow::setSpsTreeItem(sps_t *sps)
     addChildItem(topItem, " mb_adaptive_frame_field_flag : %d", sps->mb_adaptive_frame_field_flag);
     addChildItem(topItem, " direct_8x8_inference_flag : %d", sps->direct_8x8_inference_flag);
 
-    //printf(" frame_cropping_flag : %d \n", sps->frame_cropping_flag );
-    //  printf("   frame_crop_left_offset : %d \n", sps->frame_crop_left_offset );
-    //  printf("   frame_crop_right_offset : %d \n", sps->frame_crop_right_offset );
-    //  printf("   frame_crop_top_offset : %d \n", sps->frame_crop_top_offset );
-    //  printf("   frame_crop_bottom_offset : %d \n", sps->frame_crop_bottom_offset );
-    //printf(" vui_parameters_present_flag : %d \n", sps->vui_parameters_present_flag );
+    tmp = addChildItem(topItem, " frame_cropping_flag : %d", sps->frame_cropping_flag);
+        addChildItem(tmp, " frame_crop_left_offset : %d", sps->frame_crop_left_offset);
+        addChildItem(tmp, " frame_crop_right_offset : %d", sps->frame_crop_right_offset);
+        addChildItem(tmp, " frame_crop_top_offset : %d", sps->frame_crop_top_offset);
+        addChildItem(tmp, " frame_crop_bottom_offset : %d", sps->frame_crop_bottom_offset);
+    topItem->addChild(tmp);
+    addChildItem(topItem, " vui_parameters_present_flag : %d", sps->vui_parameters_present_flag);
 
+    addChildItem(topItem, " === VUI ===", "");
+    tmp = addChildItem(topItem, " aspect_ratio_info_present_flag : %d", sps->vui.aspect_ratio_info_present_flag);
+        tmp2 = addChildItem(tmp, " aspect_ratio_idc : %d", sps->vui.aspect_ratio_idc);
+            addChildItem(tmp2, " sar_width : %d", sps->vui.sar_width);
+            addChildItem(tmp2, " sar_height : %d", sps->vui.sar_height);
+        tmp->addChild(tmp2);
+    topItem->addChild(tmp);
+
+    tmp = addChildItem(topItem, " overscan_appropriate_flag : %d", sps->vui.overscan_appropriate_flag);
+    topItem->addChild(tmp);
+
+    tmp = addChildItem(topItem, " video_signal_type_present_flag : %d", sps->vui.video_signal_type_present_flag);
+        addChildItem(tmp, " video_format : %d", sps->vui.video_format);
+        addChildItem(tmp, " video_full_range_flag : %d", sps->vui.video_full_range_flag);
+        tmp2 = addChildItem(tmp, " colour_description_present_flag : %d", sps->vui.colour_description_present_flag);
+            addChildItem(tmp2, " colour_primaries : %d", sps->vui.colour_primaries);
+            addChildItem(tmp2, " transfer_characteristics : %d", sps->vui.transfer_characteristics);
+            addChildItem(tmp2, " matrix_coefficients : %d", sps->vui.matrix_coefficients);
+        tmp->addChild(tmp2);
+    topItem->addChild(tmp);
+
+    tmp = addChildItem(topItem, " chroma_loc_info_present_flag : %d", sps->vui.chroma_loc_info_present_flag);
+        addChildItem(tmp, " chroma_sample_loc_type_top_field : %d", sps->vui.chroma_sample_loc_type_top_field);
+        addChildItem(tmp, " chroma_sample_loc_type_bottom_field : %d", sps->vui.chroma_sample_loc_type_bottom_field);
+    topItem->addChild(tmp);
+
+    tmp = addChildItem(topItem, " timing_info_present_flag : %d", sps->vui.timing_info_present_flag);
+        addChildItem(tmp, " num_units_in_tick : %d", sps->vui.num_units_in_tick);
+        addChildItem(tmp, " time_scale : %d", sps->vui.time_scale);
+        addChildItem(tmp, " fixed_frame_rate_flag : %d", sps->vui.fixed_frame_rate_flag);
+    topItem->addChild(tmp);
+
+    addChildItem(topItem, " nal_hrd_parameters_present_flag : %d", sps->vui.nal_hrd_parameters_present_flag);
+    tmp = addChildItem(topItem, " vcl_hrd_parameters_present_flag : %d", sps->vui.vcl_hrd_parameters_present_flag);
+        addChildItem(tmp, " low_delay_hrd_flag : %d", sps->vui.low_delay_hrd_flag);
+    topItem->addChild(tmp);
+
+    addChildItem(topItem, " pic_struct_present_flag : %d", sps->vui.pic_struct_present_flag);
+    tmp = addChildItem(topItem, " bitstream_restriction_flag : %d", sps->vui.bitstream_restriction_flag);
+        addChildItem(tmp, " motion_vectors_over_pic_boundaries_flag : %d", sps->vui.motion_vectors_over_pic_boundaries_flag);
+        addChildItem(tmp, " max_bytes_per_pic_denom : %d", sps->vui.max_bytes_per_pic_denom);
+        addChildItem(tmp, " max_bits_per_mb_denom : %d", sps->vui.max_bits_per_mb_denom);
+        addChildItem(tmp, " log2_max_mv_length_horizontal : %d", sps->vui.log2_max_mv_length_horizontal);
+        addChildItem(tmp, " log2_max_mv_length_vertical : %d", sps->vui.log2_max_mv_length_vertical);
+        addChildItem(tmp, " num_reorder_frames : %d", sps->vui.num_reorder_frames);
+        addChildItem(tmp, " max_dec_frame_buffering : %d", sps->vui.max_dec_frame_buffering);
+    topItem->addChild(tmp);
+
+
+    addChildItem(topItem, " === HRD ===", "");
+    addChildItem(topItem, " cpb_cnt_minus1 : %d", sps->hrd.cpb_cnt_minus1);
+    addChildItem(topItem, " bit_rate_scale : %d", sps->hrd.bit_rate_scale);
+    addChildItem(topItem, " cpb_size_scale : %d", sps->hrd.cpb_size_scale);
+
+    int SchedSelIdx;
+    for( SchedSelIdx = 0; SchedSelIdx <= sps->hrd.cpb_cnt_minus1; SchedSelIdx++ )
+    {
+        addChildItem(topItem, " bit_rate_value_minus1[%d] : %d", SchedSelIdx, sps->hrd.bit_rate_value_minus1[SchedSelIdx]);
+        addChildItem(topItem, " cpb_size_value_minus1[%d] : %d", SchedSelIdx, sps->hrd.cpb_size_value_minus1[SchedSelIdx]);
+        addChildItem(topItem, " cbr_flag[%d] : %d", SchedSelIdx, sps->hrd.cbr_flag[SchedSelIdx]);
+    }
+
+    addChildItem(topItem, " initial_cpb_removal_delay_length_minus1 : %d", sps->hrd.initial_cpb_removal_delay_length_minus1);
+    addChildItem(topItem, " cpb_removal_delay_length_minus1 : %d", sps->hrd.cpb_removal_delay_length_minus1);
+    addChildItem(topItem, " dpb_output_delay_length_minus1 : %d", sps->hrd.dpb_output_delay_length_minus1);
+    addChildItem(topItem, " time_offset_length : %d", sps->hrd.time_offset_length);
 
     ui->mTreeWidget->addTopLevelItem(topItem);
+}
+
+void MainWindow::dropEvent(QDropEvent *event)
+{
+    qDebug() << "dropEvent\n";
+}
+
+void MainWindow::dragEnterEvent(QDragEnterEvent* event)
+{
+    qDebug() << "dragEnterEvent\n";
 }
