@@ -8,6 +8,9 @@
 #include <string.h>
 #include <fcntl.h>
 #include <vector>
+#include <string>
+
+using namespace std;
 
 extern "C" {
 
@@ -234,6 +237,11 @@ public:
 
     sps_t *getSps();
 
+    PacketItem *getItem(int index);
+    int getNaluType() { return mCurNalutype; }
+
+    std::string getFileUrl() { return mFileUrl; }
+
 private:
     std::vector<PacketItem *> mPackets;
     int mFrameCount;
@@ -253,7 +261,9 @@ private:
     void debug_sps(sps_t* sps);
 
     sps_t * mSps;
+    int mCurNalutype;
 
+    std::string mFileUrl;
 };
 
 #endif // VIDEOPARSER_H
