@@ -34,9 +34,25 @@ void MainWindow::on_actionOpen_triggered()
         if (item != NULL) {
            int type = mParser->parseNaluItem(item);
            switch (type) {
+           case NALU_UNKNOWN:
+    //            qDebug() << "Unknown Nalu" << endl;
+               setTableItem(count, "unknown");
+               break;
            case NALU_SLICE:
     //            qDebug() << "Slice Nalu" << endl;
                setTableItem(count, "slice");
+               break;
+           case NALU_SLICE_DPA:
+    //            qDebug() << "Slice dpa Nalu" << endl;
+               setTableItem(count, "slice dpa");
+               break;
+           case NALU_SLICE_DPB:
+    //            qDebug() << "Slice dpb Nalu" << endl;
+               setTableItem(count, "slice dpb");
+               break;
+           case NALU_SLICE_DPC:
+    //            qDebug() << "Slice dpc Nalu" << endl;
+               setTableItem(count, "slice dpc");
                break;
            case NALU_IDR:
                qDebug() << "IDR Nalu" << endl;
@@ -58,9 +74,29 @@ void MainWindow::on_actionOpen_triggered()
 //               qDebug() << "PPS Nalu" << endl;
                setTableItem(count, "pps");
                break;
+           case NALU_AUD:
+//               qDebug() << "AUD Nalu" << endl;
+               setTableItem(count,  "aud");
+               break;
+           case NALU_END_SEQ:
+//               qDebug() << "SEQ Nalu" << endl;
+               setTableItem(count,  "end of seq");
+               break;
+           case NALU_END_STREAM:
+//               qDebug() << "Stream Nalu" << endl;
+               setTableItem(count, "end of stream");
+               break;
+           case NALU_FILTER_DATA:
+//               qDebug() << "Filter data Nalu" << endl;
+               setTableItem(count, "filter data");
+               break;
+           case NALU_SPS_EXT:
+//               qDebug() << "Sps ext Nalu" << endl;
+               setTableItem(count, "spp ext");
+               break;
            default:
-               qDebug() << "Unknown Nalu" << endl;
-               setTableItem(count, "unknown");
+               qDebug() << "reserve Nalu" << endl;
+               setTableItem(count, "reserve");
                break;
            }
 

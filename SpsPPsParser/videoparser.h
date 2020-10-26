@@ -20,11 +20,20 @@ extern "C" {
 
 #include "bs.h"
 
+#define NALU_UNKNOWN  0
 #define NALU_SLICE  1
+#define NALU_SLICE_DPA  2
+#define NALU_SLICE_DPB  3
+#define NALU_SLICE_DPC  4
 #define NALU_IDR  5
 #define NALU_SEI  6
 #define NALU_SPS  7
 #define NALU_PPS  8
+#define NALU_AUD  9
+#define NALU_END_SEQ  10
+#define NALU_END_STREAM  11
+#define NALU_FILTER_DATA  12
+#define NALU_SPS_EXT  13
 
 #define MAX_DATA_SIZE 100
 
