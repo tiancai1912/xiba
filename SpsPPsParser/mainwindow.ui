@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>863</width>
-    <height>436</height>
+    <width>870</width>
+    <height>696</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -59,14 +59,37 @@
      </property>
     </column>
    </widget>
+   <widget class="QPushButton" name="mBtnPlayFile">
+    <property name="geometry">
+     <rect>
+      <x>10</x>
+      <y>390</y>
+      <width>89</width>
+      <height>25</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>play</string>
+    </property>
+   </widget>
+   <widget class="QWidget" name="mEmptyWidget" native="true">
+    <property name="geometry">
+     <rect>
+      <x>360</x>
+      <y>410</y>
+      <width>461</width>
+      <height>201</height>
+     </rect>
+    </property>
+   </widget>
   </widget>
   <widget class="QMenuBar" name="menuBar">
    <property name="geometry">
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>863</width>
-     <height>25</height>
+     <width>870</width>
+     <height>22</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuFile">

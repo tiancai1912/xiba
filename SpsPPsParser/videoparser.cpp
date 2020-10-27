@@ -6,7 +6,8 @@ VideoParser::VideoParser() :
     mFrameCount(0),
     m_video_bsf(NULL),
     m_fmt_ctx(NULL),
-    m_video_stream_idx(-1)
+    m_video_stream_idx(-1),
+    mCurNalutype(0)
 {
 }
 
@@ -97,12 +98,14 @@ int VideoParser::parseNaluItem(PacketItem *item)
 }
 
 bool VideoParser::openFile(char *url)
-{
+{   
     /* open input file, and allocate format context */
     if (avformat_open_input(&m_fmt_ctx, (char *)url, NULL, NULL) < 0) {
         fprintf(stderr, "Could not open source file %s\n", url);
         return false;
     }
+
+    mFileUrl = url;
 
     /* retrieve stream information */
     if (avformat_find_stream_info(m_fmt_ctx, NULL) < 0) {
@@ -196,6 +199,11 @@ bs_t* VideoParser::bs_init(bs_t* b, uint8_t* buf, size_t size)
 sps_t *VideoParser::getSps()
 {
     return mSps;
+}
+
+VideoParser::PacketItem * VideoParser::getItem(int index)
+{
+   return mPackets.at(index);
 }
 
 bs_t* VideoParser::bs_new(uint8_t* buf, size_t size)
@@ -305,7 +313,6 @@ int VideoParser::read_nal_unit(uint8_t* buf, int size)
 //                break;
 
             case NAL_UNIT_TYPE_SPS:
-        qDebug() << "parse sps info" << endl;
                 sps_t * sps = new sps_t();
 //                read_seq_parameter_set_rbsp(h, b);
 //                nal->parsed = h->sps;
@@ -341,8 +348,10 @@ int VideoParser::read_nal_unit(uint8_t* buf, int size)
 //                // here comes the reserved/unspecified/ignored stuff
 //                nal->parsed = NULL;
 //                nal->sizeof_parsed = 0;
-                return 0;
+//                return 0;
         }
+
+        mCurNalutype = nal->nal_unit_type;
 
         if (bs_overrun(b)) { bs_free(b); free(rbsp_buf); return -1; }
 

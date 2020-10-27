@@ -2,6 +2,11 @@
 #include "ui_mainwindow.h"
 #include <QDebug>
 #include <string>
+#include <QVideoWidget>
+#include <QFileInfo>
+#include <QString>
+#include <QVBoxLayout>
+#include <thread>
 
 #define COLUMENUM 2
 
@@ -14,7 +19,9 @@ MainWindow::MainWindow(QWidget *parent) :
 {
     ui->setupUi(this);
     mParser = new VideoParser();
+
     initTable();
+    initWidget();
 
     setTreeItem();
 }
@@ -26,7 +33,7 @@ MainWindow::~MainWindow()
 
 void MainWindow::on_actionOpen_triggered()
 {
-    mParser->openFile("test.mp4");
+    mParser->openFile("out.mp4");
 
     int count = 0;
     while(count < MAX_NALU_READ_SIZE) {
@@ -36,35 +43,35 @@ void MainWindow::on_actionOpen_triggered()
            switch (type) {
            case NALU_UNKNOWN:
     //            qDebug() << "Unknown Nalu" << endl;
-               setTableItem(count, "unknown");
+               setTableItem(count, "unknown", Qt::white);
                break;
            case NALU_SLICE:
     //            qDebug() << "Slice Nalu" << endl;
-               setTableItem(count, "slice");
+               setTableItem(count, "slice", Qt::white);
                break;
            case NALU_SLICE_DPA:
     //            qDebug() << "Slice dpa Nalu" << endl;
-               setTableItem(count, "slice dpa");
+               setTableItem(count, "slice dpa", Qt::white);
                break;
            case NALU_SLICE_DPB:
     //            qDebug() << "Slice dpb Nalu" << endl;
-               setTableItem(count, "slice dpb");
+               setTableItem(count, "slice dpb", Qt::white);
                break;
            case NALU_SLICE_DPC:
     //            qDebug() << "Slice dpc Nalu" << endl;
-               setTableItem(count, "slice dpc");
+               setTableItem(count, "slice dpc", Qt::white);
                break;
            case NALU_IDR:
                qDebug() << "IDR Nalu" << endl;
-               setTableItem(count, "idr");
+               setTableItem(count, "idr", Qt::red);
                break;
            case NALU_SEI:
                qDebug() << "SEI Nalu" << endl;
-               setTableItem(count, "sei");
+               setTableItem(count, "sei", Qt::yellow);
                break;
            case NALU_SPS:
                qDebug() << "SPS Nalu" << endl;
-               setTableItem(count, "sps");
+               setTableItem(count, "sps", Qt::green);
 
                mParser->read_nal_unit((unsigned char *)(item->data + 4), item->length - 4);
 //               sps_t *sps1 = mParser->getSps();
@@ -72,31 +79,31 @@ void MainWindow::on_actionOpen_triggered()
                break;
            case NALU_PPS:
 //               qDebug() << "PPS Nalu" << endl;
-               setTableItem(count, "pps");
+               setTableItem(count, "pps", Qt::blue);
                break;
            case NALU_AUD:
 //               qDebug() << "AUD Nalu" << endl;
-               setTableItem(count,  "aud");
+               setTableItem(count,  "aud", Qt::black);
                break;
            case NALU_END_SEQ:
 //               qDebug() << "SEQ Nalu" << endl;
-               setTableItem(count,  "end of seq");
+               setTableItem(count,  "end of seq", Qt::Key_degree);
                break;
            case NALU_END_STREAM:
 //               qDebug() << "Stream Nalu" << endl;
-               setTableItem(count, "end of stream");
+               setTableItem(count, "end of stream", Qt::Key_Green);
                break;
            case NALU_FILTER_DATA:
 //               qDebug() << "Filter data Nalu" << endl;
-               setTableItem(count, "filter data");
+               setTableItem(count, "filter data", Qt::Key_Green);
                break;
            case NALU_SPS_EXT:
 //               qDebug() << "Sps ext Nalu" << endl;
-               setTableItem(count, "spp ext");
+               setTableItem(count, "spp ext", Qt::Key_Green);
                break;
            default:
                qDebug() << "reserve Nalu" << endl;
-               setTableItem(count, "reserve");
+               setTableItem(count, "reserve", Qt::white);
                break;
            }
 
@@ -117,9 +124,32 @@ void MainWindow::initTable()
     ui->mTable->setRowCount(MAX_NALU_READ_SIZE);
     ui->mTable->setHorizontalHeaderLabels(headers);
     ui->mTable->verticalHeader()->setHidden(true);
+    ui->mTable->setSelectionBehavior(QAbstractItemView::SelectRows);
+    ui->mTable->setSelectionMode(QAbstractItemView::SingleSelection);
 }
 
-void MainWindow::setTableItem(int index, char *type)
+void MainWindow::initWidget()
+{
+    mPlayer = new QMediaPlayer();
+
+    QWidget *widget = new QWidget;
+        QVBoxLayout *layout = new QVBoxLayout;
+
+        mVideoWidget = new QVideoWidget;
+//        videoWidget->setAspectRatioMode(Qt::IgnoreAspectRatio);
+//            videoWidget->setFullScreen(true);
+
+            layout->addWidget(mVideoWidget);
+            widget->setLayout(layout);
+
+
+    mPlayer->setVideoOutput(mVideoWidget);
+
+    mPlayList = new QMediaPlaylist();
+    mPlayer->setPlaylist(mPlayList);
+}
+
+void MainWindow::setTableItem(int index, char *type, QColor color)
 {
 //    qDebug() << index << type << endl;
     QTableWidgetItem *item;
@@ -127,11 +157,13 @@ void MainWindow::setTableItem(int index, char *type)
     for (int j = 0; j < COLUMENUM; j++) {
         if (j == COLUME_INDEX) {
             item = new QTableWidgetItem(std::to_string(index).c_str());
-            item->setBackgroundColor(Qt::red);
+//            item->setBackgroundColor(Qt::red);
+            item->setBackgroundColor(color);
             ui->mTable->setItem(index, j, item);
         } else if (j == COLUME_TYPE) {
             item = new QTableWidgetItem(type);
-            item->setBackgroundColor(Qt::green);
+//            item->setBackgroundColor(Qt::green);
+            item->setBackgroundColor(color);
             ui->mTable->setItem(index, j, item);
         }
     }
@@ -173,6 +205,16 @@ QTreeWidgetItem * MainWindow::addItem(QTreeWidgetItem *src, QString dst)
     return src;
 }
 
+void MainWindow::updateTreeView(int index)
+{
+    VideoParser::PacketItem *item =  mParser->getItem(index);
+    mParser->read_nal_unit((unsigned char *)(item->data + 4), item->length - 4);
+    if (mParser->getNaluType() != NALU_SPS) {
+        ui->mTreeWidget->clear();
+    } else {
+        setSpsTreeItem(mParser->getSps());
+    }
+}
 
 static QTreeWidgetItem *genItem(char *name, char *value)
 {
@@ -362,4 +404,53 @@ void MainWindow::dropEvent(QDropEvent *event)
 void MainWindow::dragEnterEvent(QDragEnterEvent* event)
 {
     qDebug() << "dragEnterEvent\n";
+}
+
+void MainWindow::on_mTable_itemSelectionChanged()
+{
+    qDebug() << "choose it\n";
+    int rowIndex = ui->mTable->row(ui->mTable->selectedItems().at(0));
+    qDebug() << rowIndex << endl;
+
+    if (rowIndex > 0) {
+        updateTreeView(rowIndex);
+    }
+}
+
+void MainWindow::on_mBtnPlayFile_clicked()
+{
+    std::string url = mParser->getFileUrl();
+
+    QFileInfo info(QString(url.c_str()));
+    if (info.exists()) {
+        QUrl url = QUrl::fromLocalFile(info.absoluteFilePath());
+        qDebug() << url;
+        mPlayList->addMedia(url);
+    }
+
+
+    mVideoWidget->setFullScreen(true);
+    mPlayer->play();
+    qDebug() << mPlayer->duration() << mPlayer->position();
+//    std::thread thread(std::bind(run, this));
+//    thread.join();
+}
+
+void MainWindow::run(void *arg)
+{
+    MainWindow *pThis = (MainWindow *)arg;
+    pThis->runHandle();
+
+}
+
+void MainWindow::runHandle()
+{
+    qDebug() << mPlayer->duration() << mPlayer->position();
+    while(1) {
+        if (mPlayer->duration() == mPlayer->position()) {
+            break;
+        }
+        sleep(1);
+    }
+//    mPlayer->stop();
 }
