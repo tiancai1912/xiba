@@ -9,12 +9,12 @@ int main(int argc, char *argv[])
     qDebug() << "hello world" << endl;
 
     RtmpPush *push = new RtmpPush();
-    push->openFile("test.mp4");
+//    push->openFile("test.mp4");
     push->start();
 
-    sleep(10);
+    sleep(5);
     push->stop();
-    push->closeFile();
+//    push->closeFile();
 
     return 0;
 }

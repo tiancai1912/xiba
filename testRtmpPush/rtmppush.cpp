@@ -1,5 +1,7 @@
 #include "rtmppush.h"
 
+#define RTMP_HEAD_SIZE   (sizeof(RTMPPacket)+RTMP_MAX_HEADER_SIZE)
+
 RtmpPush::RtmpPush()
 {
     m_video_bsf = NULL;
@@ -49,10 +51,91 @@ int RtmpPush::closeFile()
 
 int RtmpPush::start()
 {
-
+    connect();
+    return 0;
 }
 
 int RtmpPush::stop()
 {
+    disconnect();
+    return 0;
+}
 
+bool RtmpPush::connect()
+{
+    mRtmp = RTMP_Alloc();
+    RTMP_Init(mRtmp);
+
+    if (RTMP_SetupURL(mRtmp, (char *)SERVER_URL) == FALSE) {
+        RTMP_Free(mRtmp);
+        printf("set url failed!\n");
+        return false;
+    }
+
+    printf("set url[%s] success!\n", SERVER_URL);
+
+    RTMP_EnableWrite(mRtmp);
+    if (RTMP_Connect(mRtmp, NULL) == FALSE) {
+        RTMP_Free(mRtmp);
+        printf("connect server failed!\n");
+        return false;
+    }
+
+    printf("connect success!\n");
+
+    if (RTMP_ConnectStream(mRtmp, 0) == FALSE) {
+        RTMP_Close(mRtmp);
+        RTMP_Free(mRtmp);
+        printf("connect stream failed!\n");
+        return false;
+    }
+
+    printf("connect stream success!\n");
+
+    return true;
+}
+
+void RtmpPush::disconnect()
+{
+    if (mRtmp) {
+        RTMP_Close(mRtmp);
+        RTMP_Free(mRtmp);
+        mRtmp = NULL;
+        printf("disconnect success!\n");
+    }
+}
+
+int RtmpPush::sendPacket(char *buf, int size)
+{
+    RTMPPacket *packet;
+    packet = (RTMPPacket *)malloc(RTMP_HEAD_SIZE + size);
+
+//    RTMPPacket* packet;
+//        /*分配包内存和初始化,len为包体长度*/
+//        packet = (RTMPPacket *)malloc(RTMP_HEAD_SIZE+size);
+//        memset(packet,0,RTMP_HEAD_SIZE);
+//        /*包体内存*/
+//        packet->m_body = (char *)packet + RTMP_HEAD_SIZE;
+//        packet->m_nBodySize = size;
+//        memcpy(packet->m_body,data,size);
+//        packet->m_hasAbsTimestamp = 0;
+//        packet->m_packetType = nPacketType; /*此处为类型有两种一种是音频,一种是视频*/
+//        packet->m_nInfoField2 = m_pRtmp->m_stream_id;
+//        packet->m_nChannel = 0x04;
+
+//        packet->m_headerType = RTMP_PACKET_SIZE_LARGE;
+//        if (RTMP_PACKET_TYPE_AUDIO ==nPacketType && size !=4)
+//        {
+//            packet->m_headerType = RTMP_PAsCKET_SIZE_MEDIUM;
+//        }
+//        packet->m_nTimeStamp = nTimestamp;
+//        /*发送*/
+//        int nRet =0;
+//        if (RTMP_IsConnected(m_pRtmp))
+//        {
+//            nRet = RTMP_SendPacket(m_pRtmp,packet,TRUE); /*TRUE为放进发送队列,FALSE是不放进发送队列,直接发送*/
+//        }
+//        /*释放内存*/
+//        free(packet);
+//        return nRet;
 }

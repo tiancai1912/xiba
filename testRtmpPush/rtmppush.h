@@ -12,7 +12,7 @@ extern "C" {
 
 }
 
-#define SERVER_URL "rtmp://10.1.198.100:1935/live/test";
+static const char *SERVER_URL = "rtmp://10.1.198.100:1935/live/test";
 
 class RtmpPush
 {
@@ -27,12 +27,20 @@ public:
     int stop();
 
 private:
+    bool connect();
+    void disconnect();
+    int sendPacket(char *buf, int len);
 
+private:
+
+    //ffmpeg
     AVPacket pkt;
     AVFormatContext *m_fmt_ctx;
     int m_video_stream_idx;
     AVBitStreamFilterContext *m_video_bsf;
 
+    //rtmp
+    RTMP* mRtmp;
 };
 
 #endif // RTMPPUSH_H
