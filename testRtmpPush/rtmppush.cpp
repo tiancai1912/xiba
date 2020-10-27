@@ -1,4 +1,6 @@
 #include "rtmppush.h"
+#include <QtDebug>
+#include <unistd.h>
 
 #define RTMP_HEAD_SIZE   (sizeof(RTMPPacket)+RTMP_MAX_HEADER_SIZE)
 
@@ -41,6 +43,8 @@ int RtmpPush::openFile(char *url)
 
     m_video_stream_idx = ret;
     m_video_bsf = av_bitstream_filter_init("h264_mp4toannexb");
+
+    readFrame();
 }
 
 int RtmpPush::closeFile()
@@ -109,6 +113,28 @@ int RtmpPush::sendPacket(char *buf, int size)
 {
     RTMPPacket *packet;
     packet = (RTMPPacket *)malloc(RTMP_HEAD_SIZE + size);
+    memset(packet, 0, RTMP_HEAD_SIZE);
+
+    packet->m_body = (char *)packet + RTMP_HEAD_SIZE;
+    packet->m_nBodySize = size;
+    memcpy(packet->m_body, buf,size);
+    packet->m_packetType = RTMP_PACKET_TYPE_VIDEO;
+    packet->m_nInfoField2 = mRtmp->m_stream_id;
+    packet->m_nChannel = 0x04;
+
+    packet->m_headerType = RTMP_PACKET_SIZE_LARGE;
+    packet->m_nTimeStamp += 40;
+    int nRet = 0;
+    if (RTMP_IsConnected(mRtmp))
+    {
+        nRet = RTMP_SendPacket(mRtmp, packet, FALSE); /*TRUE为放进发送队列,FALSE是不放进发送队列,直接发送*/
+        qDebug() << "send packet : " << nRet;
+    }
+
+    qDebug() << "send packet success!\n";
+    /*释放内存*/
+    free(packet);
+    return nRet;
 
 //    RTMPPacket* packet;
 //        /*分配包内存和初始化,len为包体长度*/
@@ -138,4 +164,39 @@ int RtmpPush::sendPacket(char *buf, int size)
 //        /*释放内存*/
 //        free(packet);
 //        return nRet;
+}
+
+void RtmpPush::readFrame()
+{
+    int ret = 0;
+    while(1) {
+        AVPacket pkt;
+        av_init_packet(&pkt);
+        pkt.data = NULL;
+        pkt.size = 0;
+        ret = av_read_frame(m_fmt_ctx, &pkt);
+        if (ret >= 0) {
+            if (pkt.stream_index == m_video_stream_idx) {
+                uint8_t *out_data = NULL;
+                int out_size = 0;
+
+                int err = av_bitstream_filter_filter(m_video_bsf, m_fmt_ctx->streams[m_video_stream_idx]->codec, NULL, &out_data, &out_size, pkt.data, pkt.size, pkt.flags & AV_PKT_FLAG_KEY);
+                if (err <= 0 ) {
+                    qDebug() << "run read, av_bitstream_filter_filter failed\n";
+                }
+
+                qDebug() << "read one frame: " << out_size << endl;
+                sendPacket((char *)out_data, out_size);
+            }
+
+            av_packet_unref(&pkt);
+        } else {
+            printf("av read frame failed!\n");
+            return;
+        }
+
+        usleep(40);
+    }
+
+    return;
 }

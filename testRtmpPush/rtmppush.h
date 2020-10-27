@@ -12,7 +12,7 @@ extern "C" {
 
 }
 
-static const char *SERVER_URL = "rtmp://10.1.198.100:1935/live/test";
+static const char *SERVER_URL = "rtmp://192.168.0.105:1935/live/test";
 
 class RtmpPush
 {
@@ -30,6 +30,8 @@ private:
     bool connect();
     void disconnect();
     int sendPacket(char *buf, int len);
+
+    void readFrame();
 
 private:
 
