@@ -11,7 +11,7 @@ int main(int argc, char *argv[])
     RtmpPush *push = new RtmpPush();
     push->start();
 
-    push->openFile("test.mp4");
+    push->openFile("test-rtsp.mp4");
     push->closeFile();
 
     sleep(5);
