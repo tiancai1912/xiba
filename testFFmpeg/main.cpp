@@ -16,6 +16,8 @@ extern "C" {
 
 }
 
+#include "videotools.h"
+
 #define ADTS_HEADER_SIZE 7
 
 static const char *TAG = "MP4Parser";
@@ -101,145 +103,205 @@ static int aac_set_adts_head(ADTSContext *acfg, unsigned char *buf, int size) {
 
 int main(int argc, char *argv[])
 {
-    AVPacket pkt;
-    AVFormatContext *fmt_ctx = NULL;
+    printf("hello world\n");
 
-    int ret = 0;
-    int video_stream_idx = -1;
-    int audio_stream_idx = -1;
-
-    const char *src_filename = NULL;
-    const char *video_dst_filename = NULL;
-    const char *audio_dst_filename = NULL;
-
-    FILE *video_dst_file = NULL;
-    FILE *audio_dst_file = NULL;
-
-
-    if (argc != 4) {
-        fprintf(stderr, "usage: %s  input_file video_output_file audio_output_file\n"
-                        "API example program to show how to read frames from an input file.\n"
-                        "This program reads frames from a file, decodes them, and writes decoded\n"
-                        "video frames to a rawvideo file named video_output_file, and decoded\n"
-                        "audio frames to a rawaudio file named audio_output_file.\n",
-                argv[0]);
-        exit(1);
-    }
-
-    src_filename = argv[1];
-    video_dst_filename = argv[2];
-    audio_dst_filename = argv[3];
-
-    /* open input file, and allocate format context */
-    if (avformat_open_input(&fmt_ctx, src_filename, NULL, NULL) < 0) {
-        fprintf(stderr, "Could not open source file %s\n", src_filename);
-        exit(1);
-    }
-
-    /* retrieve stream information */
-    if (avformat_find_stream_info(fmt_ctx, NULL) < 0) {
-        fprintf(stderr, "Could not find stream information\n");
-        exit(1);
-    }
-
-    /* dump input information to stderr */
-    av_dump_format(fmt_ctx, 0, src_filename, 0);
-
-    //find video stream index
-    ret = av_find_best_stream(fmt_ctx, AVMEDIA_TYPE_VIDEO, -1, -1, NULL, 0);
+    VideoDecoder *decoder = new VideoDecoder();
+    int ret = decoder->openInput("test.mp4");
     if (ret < 0) {
-        fprintf(stderr, "Could not find %s stream in input file '%s'\n",
-                av_get_media_type_string(AVMEDIA_TYPE_AUDIO), src_filename);
-        return ret;
-    } else {
-        video_stream_idx = ret;
+        printf("error open input\n");
     }
 
-    //find audio stream index
-    ret = av_find_best_stream(fmt_ctx, AVMEDIA_TYPE_AUDIO, -1, -1, NULL, 0);
-    if (ret < 0) {
-        fprintf(stderr, "Could not find %s stream in input file '%s'\n",
-                av_get_media_type_string(AVMEDIA_TYPE_AUDIO), src_filename);
-        return ret;
-    } else {
-        audio_stream_idx = ret;
-    }
+//    AV_PICTURE_TYPE_NONE = 0, ///< Undefined
+//    AV_PICTURE_TYPE_I,     ///< Intra
+//    AV_PICTURE_TYPE_P,     ///< Predicted
+//    AV_PICTURE_TYPE_B,     ///< Bi-dir predicted
+//    AV_PICTURE_TYPE_S,     ///< S(GMC)-VOP MPEG-4
+//    AV_PICTURE_TYPE_SI,    ///< Switching Intra
+//    AV_PICTURE_TYPE_SP,    ///< Switching Predicted
+//    AV_PICTURE_TYPE_BI,    ///< BI type
 
+    int i = 10;
+    while(i > 1) {
+        AVPacket *packet = decoder->getOnePacketFromFile();
+//        printf("packet size: %d\n", packet->size);
 
-    /* initialize packet, set data to NULL, let the demuxer fill it */
-    av_init_packet(&pkt);
-    pkt.data = NULL;
-    pkt.size = 0;
+        if (packet != NULL) {
+            AVFrame *frame = decoder->decodePacket(packet);
 
-    video_dst_file = fopen(video_dst_filename, "wb+");
-    if (!video_dst_file) {
-        printf("open %s failed!\n", video_dst_filename);
-        goto end;
-    }
-
-    audio_dst_file = fopen(audio_dst_filename, "wb+");
-    if (!audio_dst_file) {
-        printf("open %s failed!\n", audio_dst_filename);
-        goto end;
-    }
-
-    ADTSContext  m_adts_ctx;
-    AVBitStreamFilterContext *m_video_bsf;
-    AVBitStreamFilterContext *m_audio_bsf;
-    m_video_bsf = av_bitstream_filter_init("h264_mp4toannexb");
-    m_audio_bsf = av_bitstream_filter_init("aac_adtstoasc");
-
-    /* read frames from the file */
-    while (av_read_frame(fmt_ctx, &pkt) >= 0) {
-        if (pkt.stream_index == video_stream_idx) {
-            uint8_t *out_data = NULL;
-            int out_size = 0;
-
-            int err = av_bitstream_filter_filter(m_video_bsf, fmt_ctx->streams[video_stream_idx]->codec, NULL, &out_data, &out_size, pkt.data, pkt.size, pkt.flags & AV_PKT_FLAG_KEY);
-            if (err <=0 ) {
-                printf("%s, run read, av_bitstream_filter_filter failed\n", TAG);
+//            printf("frame pic type: %d\n", frame->pict_type);
+            switch (frame->pict_type) {
+            case AV_PICTURE_TYPE_I:
+                printf("I frame\n");
+                break;
+            case AV_PICTURE_TYPE_P:
+                printf("P frame\n");
+                break;
+            case AV_PICTURE_TYPE_B:
+                printf("B frame\n");
+                break;
+            default:
+                printf("unknown type\n");
+                break;
             }
 
-
-            int ret = fwrite(out_data, 1, out_size, video_dst_file);
-//            int ret = fwrite(pkt.data, 1, pkt.size, video_dst_file);
-            if (ret != out_size) {
-                printf("fwrite video pkt failed!\n");
-            }
-
-        } else if (pkt.stream_index == audio_stream_idx) {
-            aac_decode_extradata(&m_adts_ctx, fmt_ctx->streams[audio_stream_idx]->codec->extradata, fmt_ctx->streams[audio_stream_idx]->codec->extradata_size);
-
-            unsigned char adtsHdr[ADTS_HEADER_SIZE] = {0};
-            aac_set_adts_head(&m_adts_ctx, adtsHdr, pkt.size);
-
-
-            int ret = fwrite(adtsHdr, 1, ADTS_HEADER_SIZE, audio_dst_file);
-            if (ret != ADTS_HEADER_SIZE) {
-                printf("fwrite audio adts header failed!\n");
-            }
-
-            ret = fwrite(pkt.data, 1, pkt.size, audio_dst_file);
-            if (ret != pkt.size) {
-                printf("fwrite audio pkt failed!\n");
-            }
+            av_frame_free(&frame);
         }
 
-        av_packet_unref(&pkt);
-        if (ret < 0)
-            break;
+        av_packet_unref(packet);
+        av_packet_free(&packet);
+
+        i--;
     }
 
-    printf("Demuxing succeeded.\n");
 
-end:
-    fclose(video_dst_file);
-    fclose(audio_dst_file);
-
-    av_bitstream_filter_close(m_video_bsf);
-    av_bitstream_filter_close(m_audio_bsf);
-
-    avformat_close_input(&fmt_ctx);
-
-    return ret < 0;
+    return 0;
 }
+
+//int main(int argc, char *argv[])
+//{
+//    AVPacket pkt;
+//    AVFormatContext *fmt_ctx = NULL;
+
+//    int ret = 0;
+//    int video_stream_idx = -1;
+//    int audio_stream_idx = -1;
+
+//    const char *src_filename = NULL;
+//    const char *video_dst_filename = NULL;
+//    const char *audio_dst_filename = NULL;
+
+//    FILE *video_dst_file = NULL;
+//    FILE *audio_dst_file = NULL;
+
+
+//    if (argc != 4) {
+//        fprintf(stderr, "usage: %s  input_file video_output_file audio_output_file\n"
+//                        "API example program to show how to read frames from an input file.\n"
+//                        "This program reads frames from a file, decodes them, and writes decoded\n"
+//                        "video frames to a rawvideo file named video_output_file, and decoded\n"
+//                        "audio frames to a rawaudio file named audio_output_file.\n",
+//                argv[0]);
+//        exit(1);
+//    }
+
+//    src_filename = argv[1];
+//    video_dst_filename = argv[2];
+//    audio_dst_filename = argv[3];
+
+//    /* open input file, and allocate format context */
+//    if (avformat_open_input(&fmt_ctx, src_filename, NULL, NULL) < 0) {
+//        fprintf(stderr, "Could not open source file %s\n", src_filename);
+//        exit(1);
+//    }
+
+//    /* retrieve stream information */
+//    if (avformat_find_stream_info(fmt_ctx, NULL) < 0) {
+//        fprintf(stderr, "Could not find stream information\n");
+//        exit(1);
+//    }
+
+//    /* dump input information to stderr */
+//    av_dump_format(fmt_ctx, 0, src_filename, 0);
+
+//    //find video stream index
+//    ret = av_find_best_stream(fmt_ctx, AVMEDIA_TYPE_VIDEO, -1, -1, NULL, 0);
+//    if (ret < 0) {
+//        fprintf(stderr, "Could not find %s stream in input file '%s'\n",
+//                av_get_media_type_string(AVMEDIA_TYPE_AUDIO), src_filename);
+//        return ret;
+//    } else {
+//        video_stream_idx = ret;
+//    }
+
+//    //find audio stream index
+//    ret = av_find_best_stream(fmt_ctx, AVMEDIA_TYPE_AUDIO, -1, -1, NULL, 0);
+//    if (ret < 0) {
+//        fprintf(stderr, "Could not find %s stream in input file '%s'\n",
+//                av_get_media_type_string(AVMEDIA_TYPE_AUDIO), src_filename);
+//        return ret;
+//    } else {
+//        audio_stream_idx = ret;
+//    }
+
+
+//    /* initialize packet, set data to NULL, let the demuxer fill it */
+//    av_init_packet(&pkt);
+//    pkt.data = NULL;
+//    pkt.size = 0;
+
+//    video_dst_file = fopen(video_dst_filename, "wb+");
+//    if (!video_dst_file) {
+//        printf("open %s failed!\n", video_dst_filename);
+//        goto end;
+//    }
+
+//    audio_dst_file = fopen(audio_dst_filename, "wb+");
+//    if (!audio_dst_file) {
+//        printf("open %s failed!\n", audio_dst_filename);
+//        goto end;
+//    }
+
+//    ADTSContext  m_adts_ctx;
+//    AVBitStreamFilterContext *m_video_bsf;
+//    AVBitStreamFilterContext *m_audio_bsf;
+//    m_video_bsf = av_bitstream_filter_init("h264_mp4toannexb");
+//    m_audio_bsf = av_bitstream_filter_init("aac_adtstoasc");
+
+//    /* read frames from the file */
+//    while (av_read_frame(fmt_ctx, &pkt) >= 0) {
+//        if (pkt.stream_index == video_stream_idx) {
+//            uint8_t *out_data = NULL;
+//            int out_size = 0;
+
+//            int err = av_bitstream_filter_filter(m_video_bsf, fmt_ctx->streams[video_stream_idx]->codec, NULL, &out_data, &out_size, pkt.data, pkt.size, pkt.flags & AV_PKT_FLAG_KEY);
+//            if (err <=0 ) {
+//                printf("%s, run read, av_bitstream_filter_filter failed\n", TAG);
+//            }
+
+//            printf("pkt size: %d, out data size: %d\n", pkt.size, out_size);
+//            printf("out data: %02x %02x %02x %02x\n", out_data[0], out_data[1], out_data[2], out_data[3]);
+//            printf("pkt data: %02x %02x %02x %02x\n", pkt.data[0], pkt.data[1], pkt.data[2], pkt.data[3]);
+
+
+//            int ret = fwrite(out_data, 1, out_size, video_dst_file);
+////            int ret = fwrite(pkt.data, 1, pkt.size, video_dst_file);
+//            if (ret != out_size) {
+//                printf("fwrite video pkt failed!\n");
+//            }
+
+//        } else if (pkt.stream_index == audio_stream_idx) {
+//            aac_decode_extradata(&m_adts_ctx, fmt_ctx->streams[audio_stream_idx]->codec->extradata, fmt_ctx->streams[audio_stream_idx]->codec->extradata_size);
+
+//            unsigned char adtsHdr[ADTS_HEADER_SIZE] = {0};
+//            aac_set_adts_head(&m_adts_ctx, adtsHdr, pkt.size);
+
+
+//            int ret = fwrite(adtsHdr, 1, ADTS_HEADER_SIZE, audio_dst_file);
+//            if (ret != ADTS_HEADER_SIZE) {
+//                printf("fwrite audio adts header failed!\n");
+//            }
+
+//            ret = fwrite(pkt.data, 1, pkt.size, audio_dst_file);
+//            if (ret != pkt.size) {
+//                printf("fwrite audio pkt failed!\n");
+//            }
+//        }
+
+//        av_packet_unref(&pkt);
+//        if (ret < 0)
+//            break;
+//    }
+
+//    printf("Demuxing succeeded.\n");
+
+//end:
+//    fclose(video_dst_file);
+//    fclose(audio_dst_file);
+
+//    av_bitstream_filter_close(m_video_bsf);
+//    av_bitstream_filter_close(m_audio_bsf);
+
+//    avformat_close_input(&fmt_ctx);
+
+//    return ret < 0;
+//}

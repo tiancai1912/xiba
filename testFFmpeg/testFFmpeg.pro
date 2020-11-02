@@ -17,7 +17,8 @@ DEFINES += QT_DEPRECATED_WARNINGS
 INCLUDEPATH += /usr/local/ffmpeg/include
 
 SOURCES += \
-        main.cpp
+        main.cpp \
+    videotools.cpp
 
 LIBS += /usr/local/ffmpeg/lib/libavformat.so \
 	/usr/local/ffmpeg/lib/libavcodec.so \
@@ -27,3 +28,6 @@ LIBS += /usr/local/ffmpeg/lib/libavformat.so \
 qnx: target.path = /tmp/$${TARGET}/bin
 else: unix:!android: target.path = /opt/$${TARGET}/bin
 !isEmpty(target.path): INSTALLS += target
+
+HEADERS += \
+    videotools.h
