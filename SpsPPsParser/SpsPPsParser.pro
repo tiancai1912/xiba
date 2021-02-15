@@ -22,8 +22,9 @@ HEADERS  += mainwindow.h \
 
 FORMS    += mainwindow.ui
 
-INCLUDEPATH += /usr/local/ffmpeg/include
+INCLUDEPATH += /usr/local/ffmpeg/include \
+            /usr/local/include
 
-LIBS += /usr/local/ffmpeg/lib/libavformat.so \
-        /usr/local/ffmpeg/lib/libavcodec.so \
-        /usr/local/ffmpeg/lib/libavutil.so
+LIBS += -L /usr/local/lib/ -lavformat \
+        -L /usr/local/lib/ -lavcodec \
+        -L /usr/local/lib/ -lavutil
